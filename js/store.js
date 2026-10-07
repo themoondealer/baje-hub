@@ -113,6 +113,11 @@
     let sha = a.sha; if (!sha) { try { sha = (await gh(`https://api.github.com/repos/${S.repo}/contents/${a.path}`)).sha; } catch (e) { return; } }
     await gh(`https://api.github.com/repos/${S.repo}/contents/${a.path}`, { method: 'DELETE', body: JSON.stringify({ message: 'hub: delete file ' + a.name, sha }) });
   };
+  /* اندازه و خصوصی‌بودن مخزن داده (اندازه را GitHub با تأخیر و تقریبی می‌دهد) */
+  H.store.repoInfo = async () => {
+    if (S.mode === 'demo') return { kb: 187000, private: true, demo: true };
+    const r = await gh(`https://api.github.com/repos/${S.repo}`); return { kb: r.size || 0, private: !!r.private };
+  };
   H.isBoss = () => S.mode === 'demo' || S.boss.map(x => x.toLowerCase()).includes((S.user || '').toLowerCase());
   H.newId = () => 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', attachments: [], postUrls: {}, metrics: {}, history: [] });

@@ -21,6 +21,7 @@
     const keep = $('.page').scrollTop;
     $('#page').innerHTML = (H.views[U.tab] || H.views.dash)();
     $('.page').scrollTop = keep;
+    if (U.tab === 'settings') { if (S.info && $('#rs')) $('#rs').innerHTML = H.views.sizeHtml(S.info); else app.loadInfo(); }
   };
   app.enter = () => {
     const p = $('#page'); p.classList.remove('enter'); void p.offsetWidth; p.classList.add('enter');
@@ -34,6 +35,12 @@
   app.load = async (quiet) => {
     setSync('busy', 'در حال بارگذاری'); if (!quiet && !S.posts.length) $('#page').innerHTML = '<div class="sk"></div><div class="sk"></div><div class="sk"></div>';
     try { S.posts = await H.store.list(); setSync('', 'همگام'); app.render(); } catch (e) { setSync('bad', 'خطا'); H.toast(e.message, 5000, 'bad'); if (e.auth) app.logout(); else app.render(); }
+  };
+  app.loadInfo = async (warn) => {
+    try {
+      const i = await H.store.repoInfo(); S.info = i; const el = $('#rs'); if (el) el.innerHTML = H.views.sizeHtml(i);
+      if (warn) { if (!i.private) H.toast('هشدار: مخزن داده عمومی است!', 9000, 'bad'); else if (i.kb > 716800) H.toast('حجم مخزن از ۷۰۰ مگابایت گذشته؛ تنظیمات را ببینید', 7000, 'bad'); }
+    } catch (e) { const el = $('#rs'); if (el) el.innerHTML = '<p class="sub">اندازهٔ مخزن خوانده نشد.</p>'; }
   };
   app.loadSite = async () => { if (!S.settings.statsUrl) return; try { S.siteStats = await H.store.siteStats(); } catch (e) { S.siteStats = null; H.toast(e.message, 4000, 'bad'); } if (U.tab === 'stats') app.render(); };
   app.saveFrom = async (p) => {
@@ -53,7 +60,7 @@
   app.open = id => { const p = S.posts.find(x => x.id === id); if (p) H.editor.open(p, false); };
 
   /* ورود / خروج */
-  const showApp = () => { $('#login').hidden = true; $('#shell').hidden = false; applyTheme(); const t = (location.hash || '').slice(1); if (TITLES[t]) { if (t === 'list') { U.tab = 'board'; U.mode = 'list'; } else U.tab = t; } app.render(); app.enter(); app.load(); app.loadSite(); };
+  const showApp = () => { $('#login').hidden = true; $('#shell').hidden = false; applyTheme(); const t = (location.hash || '').slice(1); if (TITLES[t]) { if (t === 'list') { U.tab = 'board'; U.mode = 'list'; } else U.tab = t; } app.render(); app.enter(); app.load(); app.loadSite(); app.loadInfo(true); };
   app.logout = () => { localStorage.removeItem('baje-hub-auth'); S.mode = null; S.posts = []; $('#shell').hidden = true; $('#login').hidden = false; };
   app.enterGithub = async (token, repo) => {
     S.mode = 'github'; S.token = token; S.repo = repo; S.user = await H.ghUser(); S.boss = (await H.store.config()).boss;

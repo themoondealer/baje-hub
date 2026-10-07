@@ -268,6 +268,8 @@ button.kpi:hover{box-shadow:var(--sh2)}
 .tgm{background:linear-gradient(160deg,#6d93c7,#4a73a8);border-radius:18px;padding:18px 14px}
 .bub{background:#fff;color:#0E1020;border-radius:16px 16px 4px 16px;padding:10px 14px 6px;font-size:13.5px;line-height:1.9;max-width:92%;margin-inline-start:auto;word-break:break-word;box-shadow:0 2px 6px rgba(0,0,0,.18)}
 .bub .hash{color:#2B6DB8}.bub small{display:block;text-align:left;color:#8a9aaa;font-size:11px}
+/* نوار حجم */
+.sz{height:12px;border-radius:8px;background:var(--surface2);overflow:hidden}.sz i{display:block;height:100%;border-radius:8px;background:var(--ok);transition:width .6s}.sz.mid i{background:var(--amber)}.sz.bad i{background:var(--warn)}
 /* پیوست‌ها */
 .att{display:flex;flex-direction:column;gap:8px}
 .at{display:flex;align-items:center;gap:12px;background:var(--surface2);border-radius:16px;padding:8px 12px 8px 8px}

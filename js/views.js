@@ -136,12 +136,21 @@
     <div class="panel" style="margin-top:14px"><h3>${ic('table', 18)}جدول پست‌های منتشرشده</h3>${done.length ? tbl : `<div class="empty">پستی با وضعیت «منتشر شد» نیست.</div>`}</div>`;
   };
 
+  /* نوار حجم مخزن: سقف توصیه‌شدهٔ GitHub حدود ۱ گیگابایت */
+  V.sizeHtml = i => {
+    const mb = i.kb / 1024, pct = Math.min(100, mb / 1024 * 100), lvl = pct >= 88 ? 'bad' : pct >= 68 ? 'mid' : 'ok';
+    return `${i.private ? `<p class="pill o">${ic('shield', 13)}مخزن داده خصوصی است</p>` : `<div class="err" style="margin:0 0 10px">هشدار: مخزن داده عمومی است! همین حالا در Settings مخزن آن را Private کنید.</div>`}
+      <p style="margin:10px 0 6px"><b>${fa(Math.round(mb))}</b> مگابایت از حدود ${fa(1024)} مگابایت توصیه‌شده${i.demo ? ' (نمونه)' : ''}</p>
+      <div class="sz ${lvl}"><i style="width:${Math.max(1, pct)}%"></i></div>
+      <p class="sub" style="margin-top:8px;font-size:12.5px">${lvl === 'bad' ? 'نزدیک سقف است؛ فایل‌های قدیمی را به Drive ببرید یا مخزن فایل جدا بسازید.' : lvl === 'mid' ? 'از ۷۰٪ گذشته؛ فایل‌های سنگین را در Drive نگه دارید.' : 'فضا کافی است.'} عدد را GitHub با تأخیر به‌روز می‌کند و حذف فایل از تاریخچه حجم را کم نمی‌کند.</p>`;
+  };
   /* ---------- تنظیمات ---------- */
   V.settings = () => {
     const boss = H.isBoss(), set = S.settings;
     return `<div class="set">
     <div class="panel"><h3>${ic('users', 18)}حساب</h3><div class="me"><span class="av">${esc(H.initials(S.user))}</span><div><b>${esc(S.user || '—')}</b><small>${boss ? 'رئیس (می‌تواند تأیید کند)' : 'عضو تیم'}${S.mode === 'demo' ? ' · حالت نمونه' : ' · ' + esc(S.repo)}</small></div></div>
       <div style="margin-top:12px"><button class="btn d sm" data-act="logout">${ic('logout', 16)}خروج</button></div></div>
+    <div class="panel"><h3>${ic('shield', 18)}فضا و امنیت مخزن</h3><div id="rs"><p class="sub">در حال بررسی…</p></div></div>
     <div class="panel"><h3>${ic('link', 18)}اتصال به سایت</h3><p>نشانی سایت برای ساخت لینک‌های رهگیری (UTM) و نقطهٔ آمار برای نمایش بازدید و ثبت‌نام هر پست.</p>
       <label class="f">نشانی سایت</label><input class="in" id="s-site" dir="ltr" value="${esc(set.siteUrl)}" placeholder="https://baje724.ir">
       <label class="f">نشانی JSON آمار سایت (اختیاری)</label><input class="in" id="s-stats" dir="ltr" value="${esc(set.statsUrl)}" placeholder="https://baje724.ir/api/social-stats">
