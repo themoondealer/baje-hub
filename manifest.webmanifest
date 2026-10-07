@@ -1,0 +1,11 @@
+{
+  "name": "هستهٔ محتوای باجه",
+  "short_name": "باجه Social",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F4F6FB",
+  "theme_color": "#2F4FE0",
+  "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}
