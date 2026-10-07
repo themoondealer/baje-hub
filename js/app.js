@@ -63,7 +63,7 @@
   const showApp = () => { $('#login').hidden = true; $('#shell').hidden = false; applyTheme(); const t = (location.hash || '').slice(1); if (TITLES[t]) { if (t === 'list') { U.tab = 'board'; U.mode = 'list'; } else U.tab = t; } app.render(); app.enter(); app.load(); app.loadSite(); app.loadInfo(true); };
   app.logout = () => { localStorage.removeItem('baje-hub-auth'); S.mode = null; S.posts = []; $('#shell').hidden = true; $('#login').hidden = false; };
   app.enterGithub = async (token, repo) => {
-    S.mode = 'github'; S.token = token; S.repo = repo; S.user = await H.ghUser(); S.boss = (await H.store.config()).boss;
+    S.mode = 'github'; S.token = token; S.repo = repo; S.user = await H.ghUser(); const cfg = await H.store.config(); S.boss = cfg.boss; S.bossUnset = !!cfg.unset;
     localStorage.setItem('baje-hub-auth', JSON.stringify({ token, repo })); showApp();
   };
 
@@ -118,7 +118,7 @@
     if (a === 'logout') return app.logout();
     if (a === 'export') return H.download('baje-posts-' + H.todayISO() + '.json', JSON.stringify(S.posts.map(p => { const c = { ...p }; delete c._sha; return c; }), null, 2));
     if (a === 'savesite') { S.settings.siteUrl = $('#s-site').value.trim() || 'https://baje724.ir'; S.settings.statsUrl = $('#s-stats').value.trim(); H.saveSettings(); S.siteStats = null; if (!S.settings.statsUrl) return H.toast('نشانی سایت ذخیره شد'); try { S.siteStats = await H.store.siteStats(); H.toast('اتصال برقرار شد ✓'); } catch (x) { H.toast(x.message, 5000, 'bad'); } return; }
-    if (a === 'savebossn') { const l = $('#s-boss').value.split(/[,،\s]+/).map(x => x.trim()).filter(Boolean); if (!l.length) return H.toast('حداقل یک نام کاربری لازم است', 3500, 'bad'); try { await H.store.saveConfig({ boss: l }); S.boss = l; H.toast('ذخیره شد ✓'); app.render(); } catch (x) { H.toast(x.message, 5000, 'bad'); } return; }
+    if (a === 'savebossn') { const l = $('#s-boss').value.split(/[,،\s]+/).map(x => x.trim()).filter(Boolean); if (!l.length) return H.toast('حداقل یک نام کاربری لازم است', 3500, 'bad'); try { await H.store.saveConfig({ boss: l }); S.boss = l; S.bossUnset = false; H.toast('ذخیره شد ✓'); app.render(); } catch (x) { H.toast(x.message, 5000, 'bad'); } return; }
   });
   document.addEventListener('keydown', e => { const el = e.target; if ((e.key === 'Enter' || e.key === ' ') && el.matches && el.matches('.card[data-act=open]')) { e.preventDefault(); app.open(el.dataset.id); } });
   document.addEventListener('input', e => { if (e.target.id === 'q') { U.q = e.target.value; const pos = e.target.selectionStart; if (U.tab === 'dash' || U.tab === 'settings' || U.tab === 'stats') { U.tab = 'board'; U.mode = 'list'; } app.render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); } });

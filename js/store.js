@@ -56,8 +56,8 @@
     },
     async config() {
       if (S.mode === 'demo') return { boss: [S.user] };
-      try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/config.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json' } }); if (r.ok) { const c = await r.json(); if (Array.isArray(c.boss)) return c; } } catch (e) {}
-      return { boss: [S.repo.split('/')[0]] };
+      try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/config.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json' } }); if (r.ok) { const c = await r.json(); if (Array.isArray(c.boss) && c.boss.length) return c; } } catch (e) {}
+      return { boss: [], unset: true }; /* تا رئیس تعیین نشده همه می‌توانند تأیید کنند؛ تنظیمات هشدار می‌دهد */
     },
     async saveConfig(cfg) {
       if (S.mode === 'demo') return;
@@ -118,7 +118,7 @@
     if (S.mode === 'demo') return { kb: 187000, private: true, demo: true };
     const r = await gh(`https://api.github.com/repos/${S.repo}`); return { kb: r.size || 0, private: !!r.private };
   };
-  H.isBoss = () => S.mode === 'demo' || S.boss.map(x => x.toLowerCase()).includes((S.user || '').toLowerCase());
+  H.isBoss = () => S.mode === 'demo' || S.bossUnset || S.boss.map(x => x.toLowerCase()).includes((S.user || '').toLowerCase());
   H.newId = () => 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', attachments: [], postUrls: {}, metrics: {}, history: [] });
   H.utm = (p, channelName) => {
