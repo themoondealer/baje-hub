@@ -105,18 +105,29 @@
   const err = m => { const x = H.$('#eerr'); if (!x) return H.toast(m, 4000, 'bad'); x.textContent = m; x.hidden = false; x.scrollIntoView({ block: 'nearest' }); };
   E.err = err;
 
-  const canEnter = (w, id) => !(w.insurance && !w.legalApproved && (id === 'ready' || id === 'done'));
+  const SIG = x => JSON.stringify([x.title, x.caption, x.captions, x.due]);
   const nextSlug = () => { const used = new Set(S.posts.map(p => p.slug)); let n = S.posts.length; let s; do { s = 'post-' + String(n++).padStart(2, '0'); } while (used.has(s)); return s; };
 
   E.collect = () => {
     const w = E.w; w.title = (w.title || '').trim();
     if (!w.title) throw new Error('عنوان را بنویسید');
     w.due = H.inputToDue(w._d || '', w._t || '');
-    if (!canEnter(w, w.stage)) throw new Error('این پست باید اول رئیس تأیید کند؛ بعد به «آماده انتشار» یا «منتشر شد» برود');
     w.slug = (w.slug || '').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || nextSlug();
     if (S.posts.some(p => p.id !== w.id && p.slug === w.slug)) throw new Error('این کد کمپین قبلاً برای پست دیگری استفاده شده');
     Object.keys(w.captions).forEach(k => { if (!w.channels.includes(k) || !String(w.captions[k]).trim()) delete w.captions[k]; });
-    if (w.stage !== E.orig.stage) w.history = [...(w.history || []), `${new Date().toLocaleString('fa-IR')} — ${H.who() || 'ناشناس'}: ${H.stage(E.orig.stage).name} ← ${H.stage(w.stage).name}`];
+    const hist = [...(w.history || [])], stamp = `${new Date().toLocaleString('fa-IR')} — ${H.who() || 'ناشناس'}`;
+    /* قفل تأیید: اگر ادمین بعد از تأیید رئیس متن یا تاریخ را عوض کند، تأیید باطل می‌شود */
+    if (w.insurance && w.legalApproved) {
+      if (H.isBoss()) w.approvedSig = SIG(w);
+      else if ((w.approvedSig ?? SIG(E.orig)) !== SIG(w)) {
+        w.legalApproved = false; hist.push(stamp + ': تأیید رئیس باطل شد (متن یا تاریخ عوض شد)');
+        if (w.stage === 'ready' || w.stage === 'done') { hist.push(stamp + ': ' + H.stage(w.stage).name + ' ← تأیید رئیس'); w.stage = 'boss'; }
+      }
+    }
+    if (!w.legalApproved) delete w.approvedSig;
+    const er = H.moveError(w, w.stage, E.orig.stage); if (er) throw new Error(er);
+    if (w.stage !== E.orig.stage) hist.push(`${stamp}: ${H.stage(E.orig.stage).name} ← ${H.stage(w.stage).name}`);
+    w.history = hist;
     const out = clone({ ...w, attachments: [] }); delete out._d; delete out._t; return out;
   };
 
@@ -142,7 +153,7 @@
     if (el.dataset.pvfull) { E.pvFull = !E.pvFull; E.updatePreview(); return; }
     if (el.classList.contains('tgl')) { const k = el.parentElement.dataset.k, v = el.dataset.v, a = w[k], i = a.indexOf(v); if (i < 0) a.push(v); else a.splice(i, 1); E.render(); return; }
     if (el.dataset.tab) { E.tab = el.dataset.tab; E.render(true); return; }
-    if (el.dataset.stage) { if (!canEnter(w, el.dataset.stage)) return err('این پست باید اول رئیس تأیید کند'); w.stage = el.dataset.stage; E.render(); return; }
+    if (el.dataset.stage) { const er = H.moveError(w, el.dataset.stage, E.orig.stage); if (er) return err(er); w.stage = el.dataset.stage; E.render(); return; }
     if (el.dataset.copy) {
       const [k, c] = el.dataset.copy.split(':'); let txt = '';
       if (k === 'caption') txt = w.caption; else if (k === 'cap') txt = w.captions[c] || w.caption; else if (k === 'utm') txt = H.utm(w, c);

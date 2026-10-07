@@ -148,7 +148,7 @@
   V.settings = () => {
     const boss = H.isBoss(), set = S.settings;
     return `<div class="set">
-    <div class="panel"><h3>${ic('users', 18)}حساب</h3><div class="me"><span class="av">${esc(H.initials(H.who()))}</span><div><b>${esc(H.who() || '—')}</b><small>${boss ? 'رئیس (می‌تواند تأیید کند)' : 'عضو تیم'}${S.mode === 'demo' ? ' · حالت نمونه' : ' · ' + esc(S.repo)}</small></div></div>
+    <div class="panel"><h3>${ic('users', 18)}حساب</h3><div class="me"><span class="av">${esc(H.initials(H.who()))}</span><div><b>${esc(H.who() || '—')}</b><small>${boss ? 'رئیس (می‌تواند تأیید کند)' : 'ادمین'}${S.mode === 'demo' ? ' · حالت نمونه' : ' · ' + esc(S.repo)}</small></div></div>
       <label class="f">نام نمایشی شما (فقط در همین مرورگر؛ برای تاریخچه)</label><div style="display:flex;gap:8px"><input class="in" id="s-name" value="${esc(S.display || '')}" placeholder="${esc(S.user || '')}"><button class="btn s sm" data-act="savename">ذخیره</button></div>
       <div style="margin-top:12px"><button class="btn d sm" data-act="logout">${ic('logout', 16)}خروج</button></div></div>
     <div class="panel"><h3>${ic('shield', 18)}فضا و امنیت مخزن</h3><div id="rs"><p class="sub">در حال بررسی…</p></div></div>
@@ -156,9 +156,11 @@
       <label class="f">نشانی سایت</label><input class="in" id="s-site" dir="ltr" value="${esc(set.siteUrl)}" placeholder="https://baje724.ir">
       <label class="f">نشانی JSON آمار سایت (اختیاری)</label><input class="in" id="s-stats" dir="ltr" value="${esc(set.statsUrl)}" placeholder="https://baje724.ir/api/social-stats">
       <div style="margin-top:12px;display:flex;gap:8px"><button class="btn p sm" data-act="savesite">ذخیره و آزمایش</button></div></div>
-    <div class="panel"><h3>${ic('shield', 18)}رئیس‌ها</h3>${S.bossUnset ? '<div class="err" style="margin:0 0 10px">هنوز رئیس تعیین نشده؛ فعلاً همه می‌توانند «تأیید رئیس» را بزنند. نام کاربری GitHub رئیس را بنویسید و ذخیره کنید.</div>' : ''}<p>فقط این نام‌های کاربری GitHub (با کاما جدا) می‌توانند «تأیید رئیس» را بزنند. در مخزن ذخیره می‌شود (team/config.json).</p>
-      <input class="in" id="s-boss" dir="ltr" value="${esc(S.boss.join(', '))}" ${boss ? '' : 'disabled'}><div style="margin-top:12px"><button class="btn p sm" data-act="savebossn" ${boss ? '' : 'disabled'}>ذخیره</button></div>
-      <p style="margin-top:8px">توجه: این قفل در خود برنامه است؛ هر همکاری که به مخزن دسترسی نوشتن دارد از نظر فنی می‌تواند فایل‌ها را مستقیم تغییر دهد.</p></div>
+    <div class="panel"><h3>${ic('shield', 18)}نقش‌ها و رمز رئیس</h3>
+      <p><b>ادمین:</b> ساخت و ویرایش پست، فایل‌ها، زمان‌بندی و ثبت نتیجه. <b>رئیس:</b> همهٔ کارهای ادمین، به‌علاوهٔ «تأیید رئیس» و عبور پست از مرحلهٔ «تأیید رئیس». اگر ادمین بعد از تأیید، متن یا تاریخ پست بیمه را عوض کند، تأیید باطل می‌شود.</p>
+      ${!S.pinCfg ? '<div class="err" style="margin:0 0 10px">رمز رئیس هنوز تعیین نشده؛ فعلاً هر کس «رئیس» را انتخاب کند وارد می‌شود. یک رمز بگذارید و فقط به رئیس بدهید.</div>' : ''}
+      ${boss || !S.pinCfg ? `${S.pinCfg ? '<label class="f">رمز فعلی</label><input class="in" id="s-pin-old" type="password" inputmode="numeric" autocomplete="off">' : ''}<label class="f">${S.pinCfg ? 'رمز جدید' : 'رمز رئیس'} (۴ تا ۱۲ رقم)</label><input class="in" id="s-pin-new" type="password" inputmode="numeric" autocomplete="off"><div style="margin-top:12px"><button class="btn p sm" data-act="savepin">ذخیره</button></div>` : '<p class="sub">فقط رئیس می‌تواند رمز را عوض کند.</p>'}
+      <p style="margin-top:8px">توجه: این قفل‌ها فقط داخل برنامه هستند و جلوی اشتباه را می‌گیرند، نه جلوی کسی که توکن را دارد؛ هر کس توکن داشته باشد از نظر فنی می‌تواند فایل‌ها را مستقیم تغییر دهد. رمز به‌صورت درهم‌شده در مخزن خصوصی ذخیره می‌شود. بعد از تحویل به رئیس، او رمز را عوض کند.</p></div>
     <div class="panel"><h3>${ic('moon', 18)}ظاهر</h3><div class="seg" style="margin:0"><button class="${set.theme === 'auto' ? 'on' : ''}" data-act="theme" data-t="auto">خودکار</button><button class="${set.theme === 'light' ? 'on' : ''}" data-act="theme" data-t="light">روشن</button><button class="${set.theme === 'dark' ? 'on' : ''}" data-act="theme" data-t="dark">تیره</button></div></div>
     <div class="panel"><h3>${ic('download', 18)}پشتیبان</h3><p>همهٔ پست‌ها را یک‌جا دانلود کنید.</p><button class="btn s sm" data-act="export">دانلود پشتیبان JSON</button></div></div>`;
   };

@@ -1,6 +1,6 @@
 /* داده‌ها: حالت نمونه (localStorage) یا مخزن GitHub (هر پست یک فایل JSON در team/posts) */
 (function (H) {
-  const S = H.S = { mode: null, token: '', repo: '', user: '', posts: [], boss: [], settings: { siteUrl: 'https://baje724.ir', statsUrl: '', theme: 'auto' }, siteStats: null };
+  const S = H.S = { mode: null, token: '', repo: '', user: '', role: 'admin', cfg: {}, pinCfg: null, posts: [], settings: { siteUrl: 'https://baje724.ir', statsUrl: '', theme: 'auto' }, siteStats: null };
   const DEMO = 'baje-hub-demo-v2', SET = 'baje-hub-settings-v1';
   H.STAGES = [
     { id: 'idea', name: 'ایده', color: '#9AA3C4' }, { id: 'draft', name: 'پیش‌نویس', color: '#7F95FF' },
@@ -55,9 +55,9 @@
       await gh(`https://api.github.com/repos/${S.repo}/contents/team/posts/${p.id}.json`, { method: 'DELETE', body: JSON.stringify({ message: 'hub: delete ' + p.title, sha: p._sha }) });
     },
     async config() {
-      if (S.mode === 'demo') return { boss: [S.user] };
-      try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/config.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json' } }); if (r.ok) { const c = await r.json(); if (Array.isArray(c.boss) && c.boss.length) return c; } } catch (e) {}
-      return { boss: [], unset: true }; /* تا رئیس تعیین نشده همه می‌توانند تأیید کنند؛ تنظیمات هشدار می‌دهد */
+      if (S.mode === 'demo') return {};
+      try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/config.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json' } }); if (r.ok) { const c = await r.json(); if (c && typeof c === 'object') return c; } } catch (e) {}
+      return {};
     },
     async saveConfig(cfg) {
       if (S.mode === 'demo') return;
@@ -119,7 +119,17 @@
     const r = await gh(`https://api.github.com/repos/${S.repo}`); return { kb: r.size || 0, private: !!r.private };
   };
   H.who = () => S.display || S.user || '';
-  H.isBoss = () => S.mode === 'demo' || S.bossUnset || S.boss.map(x => x.toLowerCase()).includes((S.user || '').toLowerCase());
+  /* دو نقش: ادمین (کار روزانه) و رئیس (تأیید). قفل‌ها فقط راهنمای داخل برنامه‌اند، نه امنیت */
+  H.isBoss = () => S.role === 'boss';
+  H.roleName = () => H.isBoss() ? 'رئیس' : 'ادمین';
+  H.sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)))].map(x => x.toString(16).padStart(2, '0')).join('');
+  H.pinHash = (salt, pin) => H.sha(salt + ':' + String(pin).trim());
+  H.moveError = (p, to, from) => {
+    from = from || p.stage; if (to === from) return '';
+    if ((to === 'ready' || to === 'done') && p.insurance && !p.legalApproved) return 'این پست باید اول رئیس تأیید کند';
+    if (from === 'boss' && (to === 'ready' || to === 'done') && !H.isBoss()) return 'فقط رئیس می‌تواند پست را از «تأیید رئیس» عبور بدهد';
+    return '';
+  };
   H.newId = () => 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', attachments: [], postUrls: {}, metrics: {}, history: [] });
   H.utm = (p, channelName) => {

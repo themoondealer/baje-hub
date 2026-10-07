@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg">
 <title>هستهٔ محتوای باجه</title>
-<link rel="stylesheet" href="css/app.css?v=20261007e">
+<link rel="stylesheet" href="css/app.css?v=20261007f">
 </head>
 <body>
 <div id="login" hidden>
@@ -20,6 +20,9 @@
     <div id="lerr" class="err" hidden></div>
     <label class="f" for="lrepo">مخزن داده (owner/repo)</label>
     <input id="lrepo" class="in" dir="ltr" placeholder="owner/repo" autocomplete="off">
+    <label class="f">نقش شما</label>
+    <div class="seg" id="lrole" style="margin:0"><button type="button" class="on" data-r="admin">ادمین</button><button type="button" data-r="boss">رئیس</button></div>
+    <div id="lpinw" hidden><label class="f" for="lpin">رمز رئیس</label><input id="lpin" class="in" type="password" inputmode="numeric" autocomplete="off"></div>
     <label class="f" for="lname">نام شما (اختیاری، برای تاریخچه)</label>
     <input id="lname" class="in" placeholder="مثلاً: مریم" autocomplete="off">
     <label class="f" for="ltok">توکن GitHub</label>
@@ -52,12 +55,12 @@
 <div id="editor"></div>
 <div id="palette" hidden></div>
 <div id="toast" class="toast" hidden></div>
-<script src="js/util.js?v=20261007e"></script>
-<script src="js/jalali.js?v=20261007e"></script>
-<script src="js/store.js?v=20261007e"></script>
-<script src="js/charts.js?v=20261007e"></script>
-<script src="js/views.js?v=20261007e"></script>
-<script src="js/editor.js?v=20261007e"></script>
-<script src="js/app.js?v=20261007e"></script>
+<script src="js/util.js?v=20261007f"></script>
+<script src="js/jalali.js?v=20261007f"></script>
+<script src="js/store.js?v=20261007f"></script>
+<script src="js/charts.js?v=20261007f"></script>
+<script src="js/views.js?v=20261007f"></script>
+<script src="js/editor.js?v=20261007f"></script>
+<script src="js/app.js?v=20261007f"></script>
 </body>
 </html>
