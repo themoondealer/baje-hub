@@ -30,7 +30,7 @@
     return `<div class="card ${p.insurance ? 'ins' : ''}" ${drag ? 'draggable="true"' : ''} role="button" tabindex="0" data-act="open" data-id="${esc(p.id)}">
       <div class="t"><span>${esc(p.title || 'بدون عنوان')}</span>${p.stage !== 'done' ? ring(p) : ''}</div>
       <div class="m"><span class="${late(p) ? 'late' : ''}">${ic('clock', 13)} ${esc(H.fmtDue(p.due))}${p.due ? ' · ' + H.relDay(p.due) : ''}</span>
-        ${p.insurance ? `<span class="pill ${p.legalApproved ? 'o' : 'w'}">${ic('shield', 12)}${p.legalApproved ? 'تأیید رئیس' : 'نیاز به تأیید رئیس'}</span>` : ''}</div>
+        ${p.insurance ? `<span class="pill ${p.legalApproved ? 'o' : 'w'}">${ic('shield', 12)}${p.legalApproved ? 'تأیید رئیس' : 'نیاز به تأیید رئیس'}</span>` : ''}${(p.attachments || []).length ? `<span class="pill" title="فایل‌های پیوست">${ic('file', 12)}${fa(p.attachments.length)}</span>` : ''}</div>
       <div class="f">${chDots(p)}${p.formats.map(f => `<span class="pill">${esc(f)}</span>`).join('')}
         ${p.assignee ? `<span class="av" style="width:26px;height:26px;font-size:10px" title="${esc(p.assignee)}">${esc(H.initials(p.assignee))}</span>` : ''}
         ${nx && p.stage !== 'done' ? `<button class="go" data-act="next" data-id="${esc(p.id)}" title="برو به «${nx.name}»" aria-label="مرحلهٔ بعد">${ic('chevR', 16, 2.2)}</button>` : ''}</div></div>`;

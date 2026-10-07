@@ -97,4 +97,23 @@ window.H = window.H || {};
   };
   /* حالت خالی با آیکن بزرگ */
   H.empty = (icon, text, cta) => `<div class="empty"><span class="eb">${H.ic(icon, 30, 1.6)}</span><p>${text}</p>${cta || ''}</div>`;
+
+  /* فایل‌ها: خواندن به base64، فشرده‌سازی تصویر، اندازهٔ خوانا */
+  H.fileToB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('فایل خوانده نشد')); r.readAsDataURL(blob); });
+  H.fmtSize = n => n > 1048576 ? H.fa((n / 1048576).toFixed(1)) + ' مگابایت' : H.fa(Math.max(1, Math.round(n / 1024))) + ' کیلوبایت';
+  H.isImg = a => /^image\//.test(a.type || '') || /\.(png|jpe?g|webp|gif)$/i.test(a.name || '');
+  H.safeName = n => { const m = String(n).match(/(\.[A-Za-z0-9]{1,5})$/), ext = m ? m[1].toLowerCase() : ''; const base = String(n).replace(/\.[A-Za-z0-9]{1,5}$/, '').replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'file'; return Date.now().toString(36) + '-' + base + ext; };
+  H.compressImage = (file, max = 2400, q = .86) => new Promise((res, rej) => {
+    if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) return res(file);
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url); const k = Math.min(1, max / Math.max(img.width, img.height));
+      if (k === 1 && file.size < 1.5e6) return res(file);
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const type = file.type === 'image/png' && file.size < 4e6 ? 'image/png' : 'image/jpeg';
+      c.toBlob(b => res(b || file), type, q);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('این تصویر خوانده نشد')); }; img.src = url;
+  });
 })(window.H);

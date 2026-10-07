@@ -83,14 +83,39 @@
       { k: 'ch', n: 'شبکه‌ها', ok: (p.channels || []).length > 0, tab: 'main' },
       { k: 'fm', n: 'قالب', ok: (p.formats || []).length > 0, tab: 'main' },
       { k: 'cap', n: 'کپشن', ok: !!(p.caption || '').trim(), tab: 'cap' },
-      { k: 'files', n: 'فایل‌ها', ok: !!(p.files || '').trim(), tab: 'links' }];
+      { k: 'files', n: 'فایل‌ها', ok: !!(p.files || '').trim() || (p.attachments || []).length > 0, tab: 'links' }];
     if (p.insurance) it.push({ k: 'ok', n: 'تأیید رئیس', ok: !!p.legalApproved, tab: 'main' });
     const done = it.filter(x => x.ok).length;
     return { items: it, done, total: it.length, pct: Math.round(done / it.length * 100), missing: it.filter(x => !x.ok) };
   };
+
+  /* فایل‌های پیوست: team/files/<postId>/<name> در مخزن (در حالت نمونه: localStorage) */
+  const DEMOF = 'baje-hub-demo-files-v1';
+  H.fileCache = {};
+  H.store.putFile = async (postId, a) => {
+    const b64 = await H.fileToB64(a.blob), path = `team/files/${postId}/${a.stored}`;
+    if (S.mode === 'demo') {
+      const m = JSON.parse(localStorage.getItem(DEMOF) || '{}'); m[path] = 'data:' + (a.type || 'application/octet-stream') + ';base64,' + b64;
+      try { localStorage.setItem(DEMOF, JSON.stringify(m)); } catch (e) { throw new Error('حافظهٔ مرورگر برای حالت نمونه پر شد'); }
+      return { path, sha: 'demo' };
+    }
+    const r = await gh(`https://api.github.com/repos/${S.repo}/contents/${path}`, { method: 'PUT', body: JSON.stringify({ message: 'hub: file ' + a.name, content: b64 }) });
+    return { path, sha: r.content && r.content.sha };
+  };
+  H.store.fileBlob = async path => {
+    if (S.mode === 'demo') { const m = JSON.parse(localStorage.getItem(DEMOF) || '{}'); if (!m[path]) throw new Error('فایل پیدا نشد'); return (await fetch(m[path])).blob(); }
+    const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/${path}`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json' } });
+    if (!r.ok) throw new Error('فایل پیدا نشد (' + r.status + ')'); return r.blob();
+  };
+  H.store.fileURL = async path => { if (H.fileCache[path]) return H.fileCache[path]; const u = URL.createObjectURL(await H.store.fileBlob(path)); H.fileCache[path] = u; return u; };
+  H.store.delFile = async a => {
+    if (S.mode === 'demo') { const m = JSON.parse(localStorage.getItem(DEMOF) || '{}'); delete m[a.path]; localStorage.setItem(DEMOF, JSON.stringify(m)); return; }
+    let sha = a.sha; if (!sha) { try { sha = (await gh(`https://api.github.com/repos/${S.repo}/contents/${a.path}`)).sha; } catch (e) { return; } }
+    await gh(`https://api.github.com/repos/${S.repo}/contents/${a.path}`, { method: 'DELETE', body: JSON.stringify({ message: 'hub: delete file ' + a.name, sha }) });
+  };
   H.isBoss = () => S.mode === 'demo' || S.boss.map(x => x.toLowerCase()).includes((S.user || '').toLowerCase());
   H.newId = () => 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-  H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', postUrls: {}, metrics: {}, history: [] });
+  H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', attachments: [], postUrls: {}, metrics: {}, history: [] });
   H.utm = (p, channelName) => {
     const base = (S.settings.siteUrl || '').replace(/\/+$/, ''), path = p.landing || '/';
     const u = /^https?:\/\//.test(path) ? path : base + (path.startsWith('/') ? path : '/' + path);

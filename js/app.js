@@ -41,7 +41,7 @@
     try { await H.store.save(p); const i = S.posts.findIndex(x => x.id === p.id); if (i >= 0) S.posts[i] = { ...S.posts[i], ...p }; else S.posts.push(p); H.toast('ذخیره شد ✓'); await app.load(true); }
     catch (e) { setSync('bad', 'خطا'); if (e.conflict) { H.toast(e.message, 5000, 'bad'); await app.load(true); } throw e; }
   };
-  app.remove = async (p) => { await H.store.del(p); H.toast('حذف شد'); await app.load(true); };
+  app.remove = async (p) => { for (const f of (p.attachments || [])) { try { await H.store.delFile(f); } catch (e) {} } await H.store.del(p); H.toast('حذف شد'); await app.load(true); };
   app.move = async (id, stage) => {
     const p = S.posts.find(x => x.id === id); if (!p || p.stage === stage) return;
     if (p.insurance && !p.legalApproved && (stage === 'ready' || stage === 'done')) return H.toast('این پست باید اول رئیس تأیید کند', 3500, 'bad');
