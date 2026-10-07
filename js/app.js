@@ -15,7 +15,7 @@
     $('#side-nav').innerHTML = NAV.map(([k, n, i]) => `<button class="nav ${on(k) ? 'on' : ''}" data-act="go" data-tab="${k}">${ic(i, 20)}${n}${k === 'board' && pend ? `<span class="bd">${fa(pend)}</span>` : ''}</button>`).join('');
     $('#tabbar').innerHTML = MOBILE.map(([k, n, i]) => `<button class="${on(k) ? 'on' : ''}" data-act="go" data-tab="${k}">${ic(i, 22)}${n}</button>`).join('');
     $('#title').textContent = U.tab === 'board' && U.mode === 'list' ? TITLES.list : TITLES[U.tab];
-    $('#me').innerHTML = `<span class="av">${esc(H.initials(S.user))}</span><div><b>${esc(S.user || '—')}</b><small>${H.isBoss() ? 'رئیس' : 'عضو تیم'}</small></div>`;
+    $('#me').innerHTML = `<span class="av">${esc(H.initials(H.who()))}</span><div><b>${esc(H.who() || '—')}</b><small>${H.isBoss() ? 'رئیس' : 'عضو تیم'}</small></div>`;
     $('#demobar').hidden = S.mode !== 'demo';
     const q = $('#q'); if (q && q.value !== U.q) q.value = U.q;
     const keep = $('.page').scrollTop;
@@ -52,7 +52,7 @@
   app.move = async (id, stage) => {
     const p = S.posts.find(x => x.id === id); if (!p || p.stage === stage) return;
     if (p.insurance && !p.legalApproved && (stage === 'ready' || stage === 'done')) return H.toast('این پست باید اول رئیس تأیید کند', 3500, 'bad');
-    const old = p.stage; const np = { ...p, stage, history: [...(p.history || []), `${new Date().toLocaleString('fa-IR')} — ${S.user || 'ناشناس'}: ${H.stage(old).name} ← ${H.stage(stage).name}`] };
+    const old = p.stage; const np = { ...p, stage, history: [...(p.history || []), `${new Date().toLocaleString('fa-IR')} — ${H.who() || 'ناشناس'}: ${H.stage(old).name} ← ${H.stage(stage).name}`] };
     p.stage = stage; app.render();
     try { await H.store.save(np); await app.load(true); H.toastAct('به «' + H.stage(stage).name + '» رفت', 'برگردان', () => app.move(id, old)); if (stage === 'done') H.confetti(); } catch (e) { p.stage = old; H.toast(e.message, 4500, 'bad'); await app.load(true); }
   };
@@ -62,9 +62,9 @@
   /* ورود / خروج */
   const showApp = () => { $('#login').hidden = true; $('#shell').hidden = false; applyTheme(); const t = (location.hash || '').slice(1); if (TITLES[t]) { if (t === 'list') { U.tab = 'board'; U.mode = 'list'; } else U.tab = t; } app.render(); app.enter(); app.load(); app.loadSite(); app.loadInfo(true); };
   app.logout = () => { localStorage.removeItem('baje-hub-auth'); S.mode = null; S.posts = []; $('#shell').hidden = true; $('#login').hidden = false; };
-  app.enterGithub = async (token, repo) => {
-    S.mode = 'github'; S.token = token; S.repo = repo; S.user = await H.ghUser(); const cfg = await H.store.config(); S.boss = cfg.boss; S.bossUnset = !!cfg.unset;
-    localStorage.setItem('baje-hub-auth', JSON.stringify({ token, repo })); showApp();
+  app.enterGithub = async (token, repo, name) => {
+    S.mode = 'github'; S.token = token; S.repo = repo; S.user = await H.ghUser(); S.display = (name || '').trim(); const cfg = await H.store.config(); S.boss = cfg.boss; S.bossUnset = !!cfg.unset;
+    localStorage.setItem('baje-hub-auth', JSON.stringify({ token, repo, name: S.display })); showApp();
   };
 
 
@@ -116,6 +116,7 @@
     if (a === 'tbl') { const c = el.closest('.cc'); const t = $('.ct', c), v = $('.cv', c); t.hidden = !t.hidden; v.hidden = !t.hidden; return; }
     if (a === 'theme') { S.settings.theme = el.dataset.t; H.saveSettings(); applyTheme(); return app.render(); }
     if (a === 'logout') return app.logout();
+    if (a === 'savename') { S.display = $('#s-name').value.trim(); try { const x = JSON.parse(localStorage.getItem('baje-hub-auth') || 'null'); if (x) { x.name = S.display; localStorage.setItem('baje-hub-auth', JSON.stringify(x)); } } catch (e) {} H.toast('نام ذخیره شد'); return app.render(); }
     if (a === 'export') return H.download('baje-posts-' + H.todayISO() + '.json', JSON.stringify(S.posts.map(p => { const c = { ...p }; delete c._sha; return c; }), null, 2));
     if (a === 'savesite') { S.settings.siteUrl = $('#s-site').value.trim() || 'https://baje724.ir'; S.settings.statsUrl = $('#s-stats').value.trim(); H.saveSettings(); S.siteStats = null; if (!S.settings.statsUrl) return H.toast('نشانی سایت ذخیره شد'); try { S.siteStats = await H.store.siteStats(); H.toast('اتصال برقرار شد ✓'); } catch (x) { H.toast(x.message, 5000, 'bad'); } return; }
     if (a === 'savebossn') { const l = $('#s-boss').value.split(/[,،\s]+/).map(x => x.trim()).filter(Boolean); if (!l.length) return H.toast('حداقل یک نام کاربری لازم است', 3500, 'bad'); try { await H.store.saveConfig({ boss: l }); S.boss = l; S.bossUnset = false; H.toast('ذخیره شد ✓'); app.render(); } catch (x) { H.toast(x.message, 5000, 'bad'); } return; }
@@ -136,14 +137,14 @@
   $('#lgo').onclick = async () => {
     const x = $('#lerr'); x.hidden = true; const repo = $('#lrepo').value.trim(), tok = $('#ltok').value.trim();
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !tok) { x.textContent = 'مخزن را مثل owner/repo و توکن را وارد کنید'; x.hidden = false; return; }
-    $('#lgo').disabled = true; try { await app.enterGithub(tok, repo); } catch (e) { x.textContent = e.message; x.hidden = false; } $('#lgo').disabled = false;
+    $('#lgo').disabled = true; try { await app.enterGithub(tok, repo, $('#lname').value); } catch (e) { x.textContent = e.message; x.hidden = false; } $('#lgo').disabled = false;
   };
-  $('#ldemo').onclick = () => { S.mode = 'demo'; S.user = 'نمونه'; showApp(); };
+  $('#ldemo').onclick = () => { S.mode = 'demo'; S.user = 'نمونه'; S.display = 'نمونه'; showApp(); };
   applyTheme();
   (async () => {
     const p = new URLSearchParams(location.search);
-    if (p.has('demo')) { S.mode = 'demo'; S.user = 'نمونه'; return showApp(); }
-    try { const a = JSON.parse(localStorage.getItem('baje-hub-auth') || 'null'); if (a) { await app.enterGithub(a.token, a.repo); return; } } catch (e) {}
+    if (p.has('demo')) { S.mode = 'demo'; S.user = 'نمونه'; S.display = 'نمونه'; return showApp(); }
+    try { const a = JSON.parse(localStorage.getItem('baje-hub-auth') || 'null'); if (a) { await app.enterGithub(a.token, a.repo, a.name); return; } } catch (e) {}
     $('#login').hidden = false;
   })();
 })(window.H);

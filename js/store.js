@@ -118,6 +118,7 @@
     if (S.mode === 'demo') return { kb: 187000, private: true, demo: true };
     const r = await gh(`https://api.github.com/repos/${S.repo}`); return { kb: r.size || 0, private: !!r.private };
   };
+  H.who = () => S.display || S.user || '';
   H.isBoss = () => S.mode === 'demo' || S.bossUnset || S.boss.map(x => x.toLowerCase()).includes((S.user || '').toLowerCase());
   H.newId = () => 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', attachments: [], postUrls: {}, metrics: {}, history: [] });

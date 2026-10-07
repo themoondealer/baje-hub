@@ -61,7 +61,7 @@
     const spark7 = days.map(d => d.ev.length);
     const spark8 = Array.from({ length: 8 }, (_, w) => P.filter(p => p.stage === 'done' && p.due && (() => { const dd = H.diffDays(t, p.due); return dd >= w * 7 && dd < (w + 1) * 7; })()).length).reverse();
     const kpi = (cls, act, attr, icon, label, val, spark) => `<button class="kpi ${cls}" data-act="${act}" ${attr}><span class="l">${ic(icon, 17)}${label}</span><span class="v" data-count="${val}">${fa(val)}</span>${spark ? `<span class="spk">${H.charts.spark(spark)}</span>` : ''}</button>`;
-    return `<div class="hero"><div class="hx"><h2>${hello}${S.user ? '، ' + esc(S.user) : ''} 👋</h2><p>${week.length ? `${fa(week.length)} پست در ${fa(7)} روز آینده برنامه دارید.` : 'این هفته پستی برنامه‌ریزی نشده.'}${wait.length ? ` ${fa(wait.length)} مورد منتظر تأیید رئیس است.` : ''}</p>
+    return `<div class="hero"><div class="hx"><h2>${hello}${H.who() ? '، ' + esc(H.who()) : ''} 👋</h2><p>${week.length ? `${fa(week.length)} پست در ${fa(7)} روز آینده برنامه دارید.` : 'این هفته پستی برنامه‌ریزی نشده.'}${wait.length ? ` ${fa(wait.length)} مورد منتظر تأیید رئیس است.` : ''}</p>
       <div class="hb"><button class="btn" data-act="new">${ic('plus', 18, 2.2)} پست جدید</button><button class="btn ghost" data-act="palette">${ic('search', 16)} جستجوی سریع <kbd>${/Mac/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd></button></div></div>
       <div class="hv" aria-hidden="true"><span class="hs s3"></span><span class="hs s2"></span><div class="hc"><i></i><i></i><b>${fa(tj.d)}</b><small>${H.MONTHS[tj.m - 1]}</small></div>${nextP ? `<div class="htag"><i></i>${esc(nextP.title.length > 22 ? nextP.title.slice(0, 22) + '…' : nextP.title)}<small>${H.relDay(nextP.due)}</small></div>` : ''}</div></div>
     <div class="kpis">
@@ -148,7 +148,8 @@
   V.settings = () => {
     const boss = H.isBoss(), set = S.settings;
     return `<div class="set">
-    <div class="panel"><h3>${ic('users', 18)}حساب</h3><div class="me"><span class="av">${esc(H.initials(S.user))}</span><div><b>${esc(S.user || '—')}</b><small>${boss ? 'رئیس (می‌تواند تأیید کند)' : 'عضو تیم'}${S.mode === 'demo' ? ' · حالت نمونه' : ' · ' + esc(S.repo)}</small></div></div>
+    <div class="panel"><h3>${ic('users', 18)}حساب</h3><div class="me"><span class="av">${esc(H.initials(H.who()))}</span><div><b>${esc(H.who() || '—')}</b><small>${boss ? 'رئیس (می‌تواند تأیید کند)' : 'عضو تیم'}${S.mode === 'demo' ? ' · حالت نمونه' : ' · ' + esc(S.repo)}</small></div></div>
+      <label class="f">نام نمایشی شما (فقط در همین مرورگر؛ برای تاریخچه)</label><div style="display:flex;gap:8px"><input class="in" id="s-name" value="${esc(S.display || '')}" placeholder="${esc(S.user || '')}"><button class="btn s sm" data-act="savename">ذخیره</button></div>
       <div style="margin-top:12px"><button class="btn d sm" data-act="logout">${ic('logout', 16)}خروج</button></div></div>
     <div class="panel"><h3>${ic('shield', 18)}فضا و امنیت مخزن</h3><div id="rs"><p class="sub">در حال بررسی…</p></div></div>
     <div class="panel"><h3>${ic('link', 18)}اتصال به سایت</h3><p>نشانی سایت برای ساخت لینک‌های رهگیری (UTM) و نقطهٔ آمار برای نمایش بازدید و ثبت‌نام هر پست.</p>

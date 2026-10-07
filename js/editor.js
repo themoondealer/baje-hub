@@ -116,7 +116,7 @@
     w.slug = (w.slug || '').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || nextSlug();
     if (S.posts.some(p => p.id !== w.id && p.slug === w.slug)) throw new Error('این کد کمپین قبلاً برای پست دیگری استفاده شده');
     Object.keys(w.captions).forEach(k => { if (!w.channels.includes(k) || !String(w.captions[k]).trim()) delete w.captions[k]; });
-    if (w.stage !== E.orig.stage) w.history = [...(w.history || []), `${new Date().toLocaleString('fa-IR')} — ${S.user || 'ناشناس'}: ${H.stage(E.orig.stage).name} ← ${H.stage(w.stage).name}`];
+    if (w.stage !== E.orig.stage) w.history = [...(w.history || []), `${new Date().toLocaleString('fa-IR')} — ${H.who() || 'ناشناس'}: ${H.stage(E.orig.stage).name} ← ${H.stage(w.stage).name}`];
     const out = clone({ ...w, attachments: [] }); delete out._d; delete out._t; return out;
   };
 
