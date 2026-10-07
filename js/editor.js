@@ -40,6 +40,7 @@
     <label class="f">شبکه‌ها</label>${toggles(w.channels, H.CHANNELS, 'channels')}
     <label class="chk w"><input type="checkbox" data-m="insurance" ${w.insurance ? 'checked' : ''}><span>پست دربارهٔ بیمه، قانون یا تاریخ مهلت است؛ باید رئیس تأیید کند.</span></label>
     <label class="chk"><input type="checkbox" data-m="legalApproved" ${w.legalApproved ? 'checked' : ''} ${boss ? '' : 'disabled'}><span>${boss ? 'تأیید رئیس: متن و تاریخ‌ها درست است' : 'تأیید رئیس (فقط رئیس می‌تواند بزند)'}</span></label>
+    <label class="chk"><input type="checkbox" data-m="autoPublish" ${w.autoPublish ? 'checked' : ''}><span>ارسال خودکار: وقتی مرحله «آماده» شد و زمانش رسید، خودش در تلگرام منتشر شود (بقیهٔ شبکه‌ها دستی).</span></label>
     <label class="f">بریف و متن اصلی</label><textarea class="in" data-m="brief">${esc(w.brief)}</textarea>`;
   };
   const tabCap = w => `<div class="pv" id="pv">${pvHtml(w)}</div><div class="cr"><b>کپشن اصلی</b><span class="cnt" id="cnt-main">${fa((w.caption || '').length)} نویسه</span><button class="btn s sm" data-copy="caption">${ic('copy', 14)}کپی</button></div>
@@ -163,7 +164,7 @@
     const a = el.dataset.e;
     if (a === 'close') return E.close();
     if (a === 'save') { const sb = el; sb.disabled = true; try { const out = E.collect(), toDone = out.stage === 'done' && E.orig.stage !== 'done'; if (E.w.attachments.some(x => x.pending) || E.removed.length) { sb.textContent = 'در حال آپلود فایل…'; } out.attachments = await E.flush(); await H.app.saveFrom(out); E.close(); if (toDone) H.confetti(); } catch (x) { if (x.conflict) E.close(); else { err(x.message); sb.disabled = false; } } }
-    if (a === 'dup') { try { const c = E.collect(); c.id = H.newId(); c.slug = ''; c.title += ' (کپی)'; c.stage = 'idea'; c.legalApproved = false; c.history = []; c.metrics = {}; c.postUrls = {}; c.attachments = []; delete c._sha; E.open(c, true); } catch (x) { err(x.message); } }
+    if (a === 'dup') { try { const c = E.collect(); c.id = H.newId(); c.slug = ''; c.title += ' (کپی)'; c.stage = 'idea'; c.legalApproved = false; c.autoPublish = false; c.history = []; c.metrics = {}; c.postUrls = {}; c.attachments = []; delete c._sha; E.open(c, true); } catch (x) { err(x.message); } }
     if (a === 'del') { if (confirm('این پست حذف شود؟')) { try { await H.app.remove(E.orig); E.close(); } catch (x) { err(x.message); } } }
   });
   document.addEventListener('dragover', e => { if (E.w && e.target.closest && e.target.closest('#att,.drop') && e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); } });

@@ -131,7 +131,7 @@
     return '';
   };
   H.newId = () => 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-  H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', attachments: [], postUrls: {}, metrics: {}, history: [] });
+  H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, autoPublish: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', attachments: [], postUrls: {}, metrics: {}, history: [] });
   H.utm = (p, channelName) => {
     const base = (S.settings.siteUrl || '').replace(/\/+$/, ''), path = p.landing || '/';
     const u = /^https?:\/\//.test(path) ? path : base + (path.startsWith('/') ? path : '/' + path);
