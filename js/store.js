@@ -6,7 +6,7 @@
     { id: 'idea', name: 'ایده', color: '#9AA3C4' }, { id: 'draft', name: 'پیش‌نویس', color: '#7F95FF' },
     { id: 'review', name: 'بازبینی', color: '#2F4FE0' }, { id: 'boss', name: 'تأیید رئیس', color: '#E8A100' },
     { id: 'ready', name: 'آماده انتشار', color: '#1FA971' }, { id: 'done', name: 'منتشر شد', color: '#0E1020' }];
-  H.CHANNELS = [{ n: 'اینستاگرام', k: 'instagram' }, { n: 'فیسبوک', k: 'facebook' }, { n: 'یوتیوب', k: 'youtube' }, { n: 'تلگرام', k: 'telegram' }, { n: 'لینکدین', k: 'linkedin' }, { n: 'آپارات', k: 'aparat' }, { n: 'بله', k: 'bale' }];
+  H.CHANNELS = [{ n: 'اینستاگرام', k: 'instagram' }, { n: 'فیسبوک', k: 'facebook' }, { n: 'یوتیوب', k: 'youtube' }, { n: 'تلگرام', k: 'telegram' }, { n: 'لینکدین', k: 'linkedin' }, { n: 'آپارات', k: 'aparat' }, { n: 'بله', k: 'bale' }, { n: 'روبیکا', k: 'rubika' }];
   H.FORMATS = [{ n: 'کاروسل', k: 'carousel' }, { n: 'ریلز', k: 'reel' }, { n: 'استوری', k: 'story' }, { n: 'پست تکی', k: 'single' }];
   H.METRICS = [{ k: 'views', n: 'بازدید' }, { k: 'likes', n: 'پسند' }, { k: 'comments', n: 'نظر' }, { k: 'saves', n: 'ذخیره' }, { k: 'shares', n: 'اشتراک' }, { k: 'linkClicks', n: 'کلیک لینک' }, { k: 'followers', n: 'دنبال‌کنندهٔ جدید' }];
   H.stage = id => H.STAGES.find(s => s.id === id) || { id, name: id, color: '#9AA3C4' };
