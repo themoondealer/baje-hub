@@ -23,7 +23,13 @@
   const MAIN6 = ['اینستاگرام', 'فیسبوک', 'تلگرام', 'بله', 'روبیکا', 'ایتا'];
   /* متن نهایی هر شبکه: همان کاری که ناشر می‌کند؛ لینک UTM به همهٔ شبکه‌ها جز اینستاگرام اضافه می‌شود */
   const finalText = (w, c) => { let t = (w.captions[c] || w.caption || '').trim(); if (c !== 'اینستاگرام') { const l = H.utm(w, c); if (!t.includes(l)) t += (t ? '\n\n' : '') + l; } return t; };
-  const imgs = w => (w.attachments || []).filter(H.isImg).map(a => a.pending ? a.url : H.fileCache[a.path]).filter(Boolean);
+  /* تصویرهای ذخیره‌شده فقط در تب «فایل و لینک» بارگذاری می‌شدند؛ پیش‌نمایش خودش هم آن‌ها را می‌گیرد (هر مسیر یک‌بار) */
+  const loading = {};
+  const imgs = w => (w.attachments || []).filter(H.isImg).map(a => {
+    if (a.pending) return a.url;
+    if (!H.fileCache[a.path] && a.path && !loading[a.path]) { loading[a.path] = 1; H.store.fileURL(a.path).then(() => E.updatePreview && E.updatePreview(), () => { loading[a.path] = 2; }); }
+    return H.fileCache[a.path];
+  }).filter(Boolean);
   const media = (w, cls) => { const u = imgs(w); const n = (w.attachments || []).filter(H.isImg).length;
     if (!u.length) return `<div class="igi"><small>${esc(w.formats[0] || 'پست')}</small><b>${esc(w.title || 'عنوان پست')}</b></div>`;
     return `<div class="slides ${cls}">${u.map(s => `<img src="${s}" alt="">`).join('')}</div>${n > 1 ? `<div class="slc">${fa(n)} تصویر؛ برای دیدن بقیه بکشید${u.length < n ? ' (در حال بارگذاری…)' : ''}</div>` : ''}`; };
