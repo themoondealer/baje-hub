@@ -40,7 +40,7 @@
     <label class="f">شبکه‌ها</label>${toggles(w.channels, H.CHANNELS, 'channels')}
     <label class="chk w"><input type="checkbox" data-m="insurance" ${w.insurance ? 'checked' : ''}><span>پست دربارهٔ بیمه، قانون یا تاریخ مهلت است؛ باید رئیس تأیید کند.</span></label>
     <label class="chk"><input type="checkbox" data-m="legalApproved" ${w.legalApproved ? 'checked' : ''} ${boss ? '' : 'disabled'}><span>${boss ? 'تأیید رئیس: متن و تاریخ‌ها درست است' : 'تأیید رئیس (فقط رئیس می‌تواند بزند)'}</span></label>
-    <label class="chk"><input type="checkbox" data-m="autoPublish" ${w.autoPublish ? 'checked' : ''}><span>ارسال خودکار: وقتی مرحله «آماده» شد و زمانش رسید، خودش در شبکه‌های متصل (تلگرام، بله، روبیکا، فیسبوک، اینستاگرام) منتشر شود. بقیه دستی‌اند.</span></label>
+    <label class="chk"><input type="checkbox" data-m="autoPublish" ${w.autoPublish ? 'checked' : ''}><span>ارسال خودکار: وقتی مرحله «آماده» شد و زمانش رسید، خودش در شبکه‌های متصل (تلگرام، بله، روبیکا، ایتا، فیسبوک، اینستاگرام) منتشر شود. بقیه دستی‌اند.</span></label>
     <label class="f">بریف و متن اصلی</label><textarea class="in" data-m="brief">${esc(w.brief)}</textarea>`;
   };
   const tabCap = w => `<div class="pv" id="pv">${pvHtml(w)}</div><div class="cr"><b>کپشن اصلی</b><span class="cnt" id="cnt-main">${fa((w.caption || '').length)} نویسه</span><button class="btn s sm" data-copy="caption">${ic('copy', 14)}کپی</button></div>

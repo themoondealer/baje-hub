@@ -2,7 +2,7 @@
 (function (H) {
   const { esc, fa, ic, S } = Object.assign({}, H, { S: H.S });
   const V = H.views = {};
-  const ST = H.STAGES, ABBR = { instagram: 'IG', facebook: 'FB', youtube: 'YT', telegram: 'TG', linkedin: 'LI', aparat: 'AP', bale: 'BL', rubika: 'RU' };
+  const ST = H.STAGES, ABBR = { instagram: 'IG', facebook: 'FB', youtube: 'YT', telegram: 'TG', linkedin: 'LI', aparat: 'AP', bale: 'BL', rubika: 'RU', eitaa: 'EI' };
   const U = { tab: 'dash', mode: 'board', q: '', f: { stage: '', channel: '', assignee: '' }, cal: null };
   H.U = U;
   const match = p => {
