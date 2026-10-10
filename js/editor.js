@@ -17,16 +17,31 @@
 
   const rdy = w => { const r = H.ready(w); return `<div class="rdy"><div class="rb2"><i style="width:${r.pct}%"></i></div><p><b>${fa(r.done)} از ${fa(r.total)}</b> مورد آماده است${r.missing.length ? ' — کم است: ' : ' ✓'}${r.missing.map(x => `<button type="button" class="mchip" data-tab="${x.tab}">${esc(x.n)}</button>`).join('')}</p></div>`; };
   const hl = t => esc(t).replace(/(#[^\s#]+)/g, '<span class="hash">$1</span>').replace(/\n/g, '<br>');
-  const LIM = { 'اینستاگرام': [2200, 'کپشن'], 'تلگرام': [1024, 'کپشن پست دارای تصویر'] };
+  /* حد نویسه: اینستاگرام ۲۲۰۰ و تلگرام ۱۰۲۴ شناخته‌شده؛ بله/روبیکا/ایتا را مثل تلگرام تقریبی می‌گیریم (تأییدنشده)؛ فیسبوک عدد قطعی ندارد */
+  const LIM = { 'اینستاگرام': [2200, 'کپشن'], 'تلگرام': [1024, 'کپشن پست دارای تصویر'], 'بله': [1024, 'کپشن تصویر؛ حد بله تأییدنشده و تقریبی'], 'روبیکا': [1024, 'کپشن تصویر؛ حد روبیکا تأییدنشده و تقریبی'], 'ایتا': [1024, 'کپشن تصویر؛ حد ایتا تأییدنشده و تقریبی'], 'فیسبوک': [0, 'متن پست'] };
+  const SKIN = { 'تلگرام': 'tg', 'بله': 'bale', 'روبیکا': 'rub', 'ایتا': 'eit' };
+  const MAIN6 = ['اینستاگرام', 'فیسبوک', 'تلگرام', 'بله', 'روبیکا', 'ایتا'];
+  /* متن نهایی هر شبکه: همان کاری که ناشر می‌کند؛ لینک UTM به همهٔ شبکه‌ها جز اینستاگرام اضافه می‌شود */
+  const finalText = (w, c) => { let t = (w.captions[c] || w.caption || '').trim(); if (c !== 'اینستاگرام') { const l = H.utm(w, c); if (!t.includes(l)) t += (t ? '\n\n' : '') + l; } return t; };
+  const imgs = w => (w.attachments || []).filter(H.isImg).map(a => a.pending ? a.url : H.fileCache[a.path]).filter(Boolean);
+  const media = (w, cls) => { const u = imgs(w); const n = (w.attachments || []).filter(H.isImg).length;
+    if (!u.length) return `<div class="igi"><small>${esc(w.formats[0] || 'پست')}</small><b>${esc(w.title || 'عنوان پست')}</b></div>`;
+    return `<div class="slides ${cls}">${u.map(s => `<img src="${s}" alt="">`).join('')}</div>${n > 1 ? `<div class="slc">${fa(n)} تصویر؛ برای دیدن بقیه بکشید${u.length < n ? ' (در حال بارگذاری…)' : ''}</div>` : ''}`; };
+  const one = (w, c) => {
+    const cap = finalText(w, c), skin = SKIN[c], user = esc(S_name());
+    if (c === 'اینستاگرام') { const short = cap.length > 125 && !E.pvFull ? cap.slice(0, 125).replace(/\s+\S*$/, '') : cap;
+      return `<div class="ig"><div class="igh"><span class="av" style="width:30px;height:30px;font-size:11px">B</span><b>baje724.ir</b></div>${media(w, 'sq')}<div class="igc">${cap ? `<b>baje724.ir</b> ${hl(short)}${short.length < cap.length ? ' <span class="more">… بیشتر</span>' : ''}` : '<span class="sub">کپشن را بنویسید تا اینجا دیده شود</span>'}</div></div>`; }
+    if (c === 'فیسبوک') return `<div class="ig fb"><div class="igh"><span class="av" style="width:34px;height:34px;font-size:12px">B</span><span><b>باجه</b><br><small class="sub">اکنون · 🌐</small></span></div><div class="igc">${cap ? hl(cap) : '<span class="sub">متن را بنویسید</span>'}</div>${media(w, 'wide')}<div class="fbb"><span>👍 پسندیدن</span><span>💬 نظر</span><span>↗ اشتراک‌گذاری</span></div></div>`;
+    if (skin) return `<div class="tgm ${skin}"><div class="chh">${esc(c)} · کانال baje724</div><div class="bub">${media(w, 'wide')}${cap ? hl(cap) : '<span class="sub">کپشن را بنویسید</span>'}<small>${fa(new Date().getHours())}:${fa(String(new Date().getMinutes()).padStart(2, '0'))}</small></div></div>`;
+    return `<div class="tgm"><div class="bub">${cap ? hl(cap) : '<span class="sub">متن را بنویسید</span>'}<small>${esc(c)}</small></div></div>`;
+  };
+  const S_name = () => 'باجه';
   const pvHtml = w => {
-    const chs = ['اینستاگرام', 'تلگرام'].filter(c => w.channels.includes(c)), all = chs.length ? chs : ['اینستاگرام'];
-    const cur = all.includes(E.pv) ? E.pv : all[0], cap = (w.captions[cur] || w.caption || '').trim(), lim = LIM[cur][0], over = cap.length > lim;
-    const short = cap.length > 125 && !E.pvFull ? cap.slice(0, 125).replace(/\s+\S*$/, '') : cap;
-    const body = cur === 'اینستاگرام'
-      ? `<div class="ig"><div class="igh"><span class="av" style="width:30px;height:30px;font-size:11px">B</span><b>baje724.ir</b></div>${E.firstImgURL(w) ? `<img class="igp" src="${E.firstImgURL(w)}" alt="">` : `<div class="igi"><small>${esc(w.formats[0] || 'پست')}</small><b>${esc(w.title || 'عنوان پست')}</b></div>`}<div class="igc">${cap ? `<b>baje724.ir</b> ${hl(short)}${short.length < cap.length ? ' <span class="more">… بیشتر</span>' : ''}` : '<span class="sub">کپشن را بنویسید تا اینجا دیده شود</span>'}</div></div>`
-      : `<div class="tgm"><div class="bub">${cap ? hl(cap) : '<span class="sub">کپشن را بنویسید</span>'}<small>${fa(new Date().getHours())}:${fa(String(new Date().getMinutes()).padStart(2, '0'))}</small></div></div>`;
-    return `<div class="pvh"><div class="tg">${all.map(c => `<button type="button" class="tgl ${c === cur ? 'on' : ''}" data-pv="${esc(c)}">${esc(c)}</button>`).join('')}</div><span class="pill ${over ? 'w' : cap.length > lim * .9 ? 'a' : ''}">${fa(cap.length)} / ${fa(lim)}</span></div>${body}
-      <div class="pvf"><span class="sub">پیش‌نمایش تقریبی؛ ${esc(LIM[cur][1])} حدود ${fa(lim)} نویسه و ممکن است شبکه آن را تغییر دهد.</span>${cur === 'اینستاگرام' && cap.length > 125 ? `<button type="button" class="mini" data-pvfull="1">${E.pvFull ? 'نمایش کوتاه' : 'نمایش کامل'}</button>` : ''}</div>${over ? `<div class="err" style="margin-top:8px">کپشن از حد این شبکه بلندتر است؛ کوتاهش کنید.</div>` : ''}`;
+    const chs = w.channels.length ? w.channels : MAIN6, cur = chs.includes(E.pv) ? E.pv : chs[0], all = !!E.pvAll;
+    const info = c => { const cap = finalText(w, c), l = (LIM[c] || [0, 'متن'])[0], over = l && cap.length > l; return { cap, l, over }; };
+    const head = `<div class="pvh"><div class="tg">${chs.map(c => `<button type="button" class="tgl ${!all && c === cur ? 'on' : ''}" data-pv="${esc(c)}">${esc(c)}</button>`).join('')}<button type="button" class="tgl ${all ? 'on' : ''}" data-pvall="1">همه شبکه‌ها</button></div></div>`;
+    const block = c => { const { cap, l, over } = info(c); return `<div class="pvb">${all ? `<div class="pvt"><b>${esc(c)}</b>` : '<div class="pvt">'}<span class="pill ${over ? 'w' : l && cap.length > l * .9 ? 'a' : ''}">${fa(cap.length)}${l ? ' / ' + fa(l) : ' نویسه'}</span></div>${one(w, c)}${over ? `<div class="err" style="margin-top:8px">متن ${esc(c)} از حد این شبکه بلندتر است؛ کوتاهش کنید.</div>` : ''}${LIM[c] ? `<div class="pvf"><span class="sub">${esc(LIM[c][1])}${l ? ' حدود ' + fa(l) + ' نویسه' : ''}</span></div>` : ''}</div>`; };
+    return head + (all ? chs.map(block).join('') : block(cur)) + `<div class="pvf"><span class="sub">پیش‌نمایش تقریبی: ظاهر و حد هر شبکه ممکن است فرق کند. لینک رهگیری آخر متن، همان است که ناشر اضافه می‌کند${w.autoPublish ? '' : ' (انتشار خودکار این پست خاموش است)'}.</span>${cur === 'اینستاگرام' && !all ? `<button type="button" class="mini" data-pvfull="1">${E.pvFull ? 'نمایش کوتاه' : 'نمایش کامل'}</button>` : ''}</div>`;
   };
   E.updatePreview = () => { const el = H.$('#pv'); if (el && E.w) el.innerHTML = pvHtml(E.w); };
   const tabMain = w => {
@@ -150,7 +165,8 @@
       if (k === 'rm') { const a = w.attachments[i]; if (!a.pending) E.removed.push(a); else URL.revokeObjectURL(a.url); w.attachments.splice(i, 1); return E.render(); }
       if (k === 'dl') { const a = w.attachments[i]; try { const b = a.pending ? a.blob : await H.store.fileBlob(a.path), u = URL.createObjectURL(b), l = document.createElement('a'); l.href = u; l.download = a.name; l.click(); setTimeout(() => URL.revokeObjectURL(u), 3000); } catch (x) { err(x.message); } return; }
     }
-    if (el.dataset.pv) { E.pv = el.dataset.pv; E.updatePreview(); return; }
+    if (el.dataset.pvall) { E.pvAll = !E.pvAll; E.updatePreview(); return; }
+    if (el.dataset.pv) { E.pv = el.dataset.pv; E.pvAll = false; E.updatePreview(); return; }
     if (el.dataset.pvfull) { E.pvFull = !E.pvFull; E.updatePreview(); return; }
     if (el.classList.contains('tgl')) { const k = el.parentElement.dataset.k, v = el.dataset.v, a = w[k], i = a.indexOf(v); if (i < 0) a.push(v); else a.splice(i, 1); E.render(); return; }
     if (el.dataset.tab) { E.tab = el.dataset.tab; E.render(true); return; }

@@ -268,6 +268,16 @@ button.kpi:hover{box-shadow:var(--sh2)}
 .tgm{background:linear-gradient(160deg,#6d93c7,#4a73a8);border-radius:18px;padding:18px 14px}
 .bub{background:#fff;color:#0E1020;border-radius:16px 16px 4px 16px;padding:10px 14px 6px;font-size:13.5px;line-height:1.9;max-width:92%;margin-inline-start:auto;word-break:break-word;box-shadow:0 2px 6px rgba(0,0,0,.18)}
 .bub .hash{color:#2B6DB8}.bub small{display:block;text-align:left;color:#8a9aaa;font-size:11px}
+/* پیش‌نمایش همهٔ شبکه‌ها */
+.pvb{margin-top:10px}.pvt{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.slides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:0;-webkit-overflow-scrolling:touch;background:var(--surface2)}
+.slides img{flex:0 0 100%;width:100%;scroll-snap-align:center;display:block;object-fit:cover}
+.slides.sq img{aspect-ratio:4/5}.slides.wide img{aspect-ratio:4/5;max-height:340px;object-fit:contain;background:#fff}
+.slc{font-size:11.5px;color:var(--muted);text-align:center;padding:6px 0 0}
+.fb .fbb{display:flex;justify-content:space-around;border-top:1px solid #e3e7f6;padding:10px 6px;font-size:12.5px;color:var(--muted)}
+.tgm.bale{background:linear-gradient(160deg,#5fb3a1,#2e8f7c)}.tgm.rub{background:linear-gradient(160deg,#c47fd1,#8f4ea0)}.tgm.eit{background:linear-gradient(160deg,#f0a15a,#d1742a)}
+.chh{color:#fff;font-size:12px;font-weight:700;opacity:.9;margin-bottom:10px}
+.bub .slides{border-radius:12px;overflow-x:auto;margin:-2px 0 8px}
 /* نوار حجم */
 .sz{height:12px;border-radius:8px;background:var(--surface2);overflow:hidden}.sz i{display:block;height:100%;border-radius:8px;background:var(--ok);transition:width .6s}.sz.mid i{background:var(--amber)}.sz.bad i{background:var(--warn)}
 /* پیوست‌ها */
