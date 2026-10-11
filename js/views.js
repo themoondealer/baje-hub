@@ -91,18 +91,34 @@
 
   /* ---------- تقویم ---------- */
   V.cal = () => {
-    if (!U.cal) { const j = H.isoToJ(today()); U.cal = { y: j.y, m: j.m }; }
-    const { y, m } = U.cal, first = H.fromJ(y, m, 1), len = H.monthLen(y, m), off = H.dowIndex(first), t = today();
+    const t = today(); if (!U.cal || !U.cal.y) { const j = H.isoToJ(t); U.cal = { ...(U.cal || {}), y: j.y, m: j.m, wk: (U.cal && U.cal.wk) || t }; }
+    const C = U.cal, mode = C.mode || 'month', { y, m } = C;
     const by = {}; S.posts.filter(match).forEach(p => { if (p.due) (by[p.due.slice(0, 10)] = by[p.due.slice(0, 10)] || []).push(p); });
-    let cells = ''; for (let i = 0; i < off; i++) cells += '<div class="day off"></div>';
-    let ag = '';
-    for (let d = 1; d <= len; d++) {
-      const dt = H.fromJ(y, m, d), iso = H.isoDate(dt), ev = byDue(by[iso] || []), fri = H.dowIndex(dt) === 6;
-      cells += `<div class="day ${iso === t ? 'today' : ''} ${fri ? 'fri' : ''}" data-act="day" data-day="${iso}"><span class="n">${fa(d)}</span>${ev.slice(0, 3).map(p => `<span class="e" data-act="open" data-id="${esc(p.id)}" style="background:${H.stage(p.stage).color}">${esc(p.title)}</span>`).join('')}${ev.length > 3 ? `<span class="cnt">+${fa(ev.length - 3)}</span>` : ''}</div>`;
-      if (ev.length || iso === t) ag += `<div class="panel" style="padding:12px"><h3 style="font-size:14px;margin-bottom:6px">${esc(H.fmtFull(iso))}${iso === t ? ' <span class="pill">امروز</span>' : ''}<button class="mini" style="margin-inline-start:auto" data-act="day" data-day="${iso}">${ic('plus', 14)}افزودن</button></h3>${ev.map(row).join('') || '<div class="empty" style="padding:8px">پستی نیست</div>'}</div>`;
+    const tm = p => (p.due && p.due.length > 10 ? fa(p.due.slice(11, 16)) : '');
+    const chip = p => `<span class="e" data-act="open" data-id="${esc(p.id)}" style="--c:${H.stage(p.stage).color}" title="${esc(p.title)} · ${esc(H.stage(p.stage).name)}"><i class="tm">${tm(p)}</i><span class="tt">${esc(p.title || 'بدون عنوان')}</span></span>`;
+    const card = p => `<button class="wcard" data-act="open" data-id="${esc(p.id)}" style="--c:${H.stage(p.stage).color}"><b>${esc(p.title || 'بدون عنوان')}</b><small>${tm(p) || 'بدون ساعت'} · ${esc(H.stage(p.stage).name)}</small><span class="chs">${(p.channels || []).map(c => `<em>${esc(c)}</em>`).join('')}</span></button>`;
+    const seg = `<div class="seg" style="margin:0">${[['month', 'ماه'], ['week', 'هفته'], ['agenda', 'برنامه']].map(([k, n]) => `<button class="${mode === k ? 'on' : ''}" data-act="cmode" data-m="${k}">${n}</button>`).join('')}</div>`;
+    const legend = `<div class="clg">${H.STAGES.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('')}</div>`;
+    let label = H.MONTHS[m - 1] + ' ' + fa(y), body = '';
+    if (mode === 'month') {
+      const first = H.fromJ(y, m, 1), len = H.monthLen(y, m), off = H.dowIndex(first);
+      let cells = ''; for (let i = 0; i < off; i++) cells += '<div class="day off"></div>';
+      for (let d = 1; d <= len; d++) {
+        const dt = H.fromJ(y, m, d), iso = H.isoDate(dt), ev = byDue(by[iso] || []), fri = H.dowIndex(dt) === 6;
+        cells += `<div class="day ${iso === t ? 'today' : ''} ${fri ? 'fri' : ''} ${iso < t ? 'past' : ''}" data-act="day" data-day="${iso}"><span class="dh"><span class="n">${fa(d)}</span><span class="ad" aria-hidden="true">+</span></span>${ev.slice(0, 3).map(chip).join('')}${ev.length > 3 ? `<span class="cnt" data-act="cweek" data-day="${iso}">+${fa(ev.length - 3)} بیشتر</span>` : ''}</div>`;
+      }
+      body = `<div class="g7">${H.DOW_FULL.map(d => `<div class="dow">${d}</div>`).join('')}${cells}</div>`;
     }
-    return `<div class="cal"><div class="nv"><button class="btn s sm" data-act="cnext" aria-label="ماه بعد">${ic('chevL', 16)}</button><b>${H.MONTHS[m - 1]} ${fa(y)}</b><button class="btn s sm" data-act="cprev" aria-label="ماه قبل">${ic('chevR', 16)}</button><button class="btn s sm" data-act="ctoday">امروز</button></div>
-      <div class="g7">${H.DOW.map(d => `<div class="dow">${d}</div>`).join('')}${cells}</div><div class="agenda">${ag}</div></div>`;
+    if (mode === 'week') {
+      const base = new Date((C.wk || t) + 'T00:00:00Z'), st = new Date(base.getTime() - H.dowIndex(base) * 864e5), days = Array.from({ length: 7 }, (_, i) => new Date(st.getTime() + i * 864e5));
+      const j0 = H.toJ(days[0]), j6 = H.toJ(days[6]); label = j0.m === j6.m ? `${fa(j0.d)} تا ${fa(j6.d)} ${H.MONTHS[j0.m - 1]} ${fa(j0.y)}` : `${fa(j0.d)} ${H.MONTHS[j0.m - 1]} تا ${fa(j6.d)} ${H.MONTHS[j6.m - 1]} ${fa(j6.y)}`;
+      body = `<div class="wk">${days.map((dt, i) => { const iso = H.isoDate(dt), ev = byDue(by[iso] || []), j = H.toJ(dt); return `<div class="wcol ${iso === t ? 'today' : ''} ${i === 6 ? 'fri' : ''}"><div class="wh"><small>${H.DOW_FULL[i]}</small><b>${fa(j.d)}</b><small>${H.MONTHS[j.m - 1]}</small></div>${ev.map(card).join('') || '<div class="wempty">خالی</div>'}<button class="wadd" data-act="day" data-day="${iso}">${ic('plus', 14)}افزودن</button></div>`; }).join('')}</div>`;
+    }
+    let ag = '';
+    for (let d = 1, len = H.monthLen(y, m); d <= len; d++) { const iso = H.isoDate(H.fromJ(y, m, d)), ev = byDue(by[iso] || []);
+      if (ev.length || iso === t) ag += `<div class="panel" style="padding:12px"><h3 style="font-size:14px;margin-bottom:6px">${esc(H.fmtFull(iso))}${iso === t ? ' <span class="pill">امروز</span>' : ''}<button class="mini" style="margin-inline-start:auto" data-act="day" data-day="${iso}">${ic('plus', 14)}افزودن</button></h3>${ev.map(row).join('') || '<div class="empty" style="padding:8px">پستی نیست</div>'}</div>`; }
+    return `<div class="cal calm-${mode}"><div class="ch2"><div class="nv"><button class="btn s sm" data-act="cnext" aria-label="بعد">${ic('chevL', 16)}</button><b>${label}</b><button class="btn s sm" data-act="cprev" aria-label="قبل">${ic('chevR', 16)}</button><button class="btn s sm" data-act="ctoday">امروز</button></div>${seg}</div>${legend}
+      ${body}<div class="agenda ${mode === 'agenda' ? 'on' : ''}">${ag || '<div class="empty">در این ماه پستی نیست.</div>'}</div></div>`;
   };
 
   /* ---------- آمار ---------- */
@@ -161,6 +177,10 @@
       ${!S.pinCfg ? '<div class="err" style="margin:0 0 10px">رمز رئیس هنوز تعیین نشده؛ فعلاً هر کس «رئیس» را انتخاب کند وارد می‌شود. یک رمز بگذارید و فقط به رئیس بدهید.</div>' : ''}
       ${boss || !S.pinCfg ? `${S.pinCfg ? '<label class="f">رمز فعلی</label><input class="in" id="s-pin-old" type="password" inputmode="numeric" autocomplete="off">' : ''}<label class="f">${S.pinCfg ? 'رمز جدید' : 'رمز رئیس'} (۴ تا ۱۲ رقم)</label><input class="in" id="s-pin-new" type="password" inputmode="numeric" autocomplete="off"><div style="margin-top:12px"><button class="btn p sm" data-act="savepin">ذخیره</button></div>` : '<p class="sub">فقط رئیس می‌تواند رمز را عوض کند.</p>'}
       <p style="margin-top:8px">توجه: این قفل‌ها فقط داخل برنامه هستند و جلوی اشتباه را می‌گیرند، نه جلوی کسی که توکن را دارد؛ هر کس توکن داشته باشد از نظر فنی می‌تواند فایل‌ها را مستقیم تغییر دهد. رمز به‌صورت درهم‌شده در مخزن خصوصی ذخیره می‌شود. بعد از تحویل به رئیس، او رمز را عوض کند.</p></div>
+    <div class="panel"><h3>${ic('file', 18)}فوتر پیام</h3><p>متنی که می‌تواند آخر هر پست بیاید (مثلاً «لینک سایت»، «با ما در ارتباط باشید»). هر پست خودش تصمیم می‌گیرد فوتر داشته باشد یا نه. جانشین‌ها: <code>{link}</code> لینک رهگیری، <code>{title}</code>، <code>{site}</code>، <code>{channel}</code>.</p>
+      <label class="f">قالب پیش‌فرض همهٔ شبکه‌ها</label><textarea class="in" id="t-all" placeholder="مثلاً: باجه، لیست بیمه آنلاین&#10;{link}">${esc(((S.tpl || {}).footers || {})['*'] || '')}</textarea>
+      <details style="margin-top:8px"><summary class="help" style="cursor:pointer">قالب جدا برای هر شبکه (اختیاری؛ جای پیش‌فرض را می‌گیرد)</summary>${H.CHANNELS.map(c => `<label class="f">${esc(c.n)}</label><textarea class="in" data-tpl="${esc(c.n)}" rows="2">${esc(((S.tpl || {}).footers || {})[c.n] || '')}</textarea>`).join('')}</details>
+      <div style="margin-top:12px"><button class="btn p sm" data-act="savetpl">ذخیرهٔ قالب</button></div></div>
     <div class="panel"><h3>${ic('moon', 18)}ظاهر</h3><div class="seg" style="margin:0"><button class="${set.theme === 'auto' ? 'on' : ''}" data-act="theme" data-t="auto">خودکار</button><button class="${set.theme === 'light' ? 'on' : ''}" data-act="theme" data-t="light">روشن</button><button class="${set.theme === 'dark' ? 'on' : ''}" data-act="theme" data-t="dark">تیره</button></div></div>
     <div class="panel"><h3>${ic('download', 18)}پشتیبان</h3><p>همهٔ پست‌ها را یک‌جا دانلود کنید.</p><button class="btn s sm" data-act="export">دانلود پشتیبان JSON</button></div></div>`;
   };

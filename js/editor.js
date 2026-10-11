@@ -21,24 +21,24 @@
   const LIM = { 'اینستاگرام': [2200, 'کپشن'], 'تلگرام': [1024, 'کپشن پست دارای تصویر'], 'بله': [1024, 'کپشن تصویر؛ حد بله تأییدنشده و تقریبی'], 'روبیکا': [1024, 'کپشن تصویر؛ حد روبیکا تأییدنشده و تقریبی'], 'ایتا': [1024, 'کپشن تصویر؛ حد ایتا تأییدنشده و تقریبی'], 'فیسبوک': [0, 'متن پست'] };
   const SKIN = { 'تلگرام': 'tg', 'بله': 'bale', 'روبیکا': 'rub', 'ایتا': 'eit' };
   const MAIN6 = ['اینستاگرام', 'فیسبوک', 'تلگرام', 'بله', 'روبیکا', 'ایتا'];
-  /* متن نهایی هر شبکه: همان کاری که ناشر می‌کند؛ لینک UTM به همهٔ شبکه‌ها جز اینستاگرام اضافه می‌شود */
-  const finalText = (w, c) => { let t = (w.captions[c] || w.caption || '').trim(); if (c !== 'اینستاگرام') { const l = H.utm(w, c); if (!t.includes(l)) t += (t ? '\n\n' : '') + l; } return t; };
+  /* متن نهایی هر شبکه: همان کاری که ناشر می‌کند (کپشن + فوتر + لینک رهگیری) */
+  const finalText = (w, c) => H.finalText(w, c);
   /* تصویرهای ذخیره‌شده فقط در تب «فایل و لینک» بارگذاری می‌شدند؛ پیش‌نمایش خودش هم آن‌ها را می‌گیرد (هر مسیر یک‌بار) */
   const loading = {};
-  const imgs = w => (w.attachments || []).filter(H.isImg).map(a => {
+  const imgs = (w, c) => (w.attachments || []).filter(H.isImg).filter(a => !c || chosen(w, c).includes(a.name)).map(a => {
     if (a.pending) return a.url;
     if (!H.fileCache[a.path] && a.path && !loading[a.path]) { loading[a.path] = 1; H.store.fileURL(a.path).then(() => E.updatePreview && E.updatePreview(), () => { loading[a.path] = 2; }); }
     return H.fileCache[a.path];
   }).filter(Boolean);
-  const media = (w, cls) => { const u = imgs(w); const n = (w.attachments || []).filter(H.isImg).length;
+  const media = (w, cls, c) => { const u = imgs(w, c); const n = (w.attachments || []).filter(H.isImg).filter(a => chosen(w, c).includes(a.name)).length;
     if (!u.length) return `<div class="igi"><small>${esc(w.formats[0] || 'پست')}</small><b>${esc(w.title || 'عنوان پست')}</b></div>`;
     return `<div class="slides ${cls}">${u.map(s => `<img src="${s}" alt="">`).join('')}</div>${n > 1 ? `<div class="slc">${fa(n)} تصویر؛ برای دیدن بقیه بکشید${u.length < n ? ' (در حال بارگذاری…)' : ''}</div>` : ''}`; };
   const one = (w, c) => {
     const cap = finalText(w, c), skin = SKIN[c], user = esc(S_name());
     if (c === 'اینستاگرام') { const short = cap.length > 125 && !E.pvFull ? cap.slice(0, 125).replace(/\s+\S*$/, '') : cap;
-      return `<div class="ig"><div class="igh"><span class="av" style="width:30px;height:30px;font-size:11px">B</span><b>baje724.ir</b></div>${media(w, 'sq')}<div class="igc">${cap ? `<b>baje724.ir</b> ${hl(short)}${short.length < cap.length ? ' <span class="more">… بیشتر</span>' : ''}` : '<span class="sub">کپشن را بنویسید تا اینجا دیده شود</span>'}</div></div>`; }
-    if (c === 'فیسبوک') return `<div class="ig fb"><div class="igh"><span class="av" style="width:34px;height:34px;font-size:12px">B</span><span><b>باجه</b><br><small class="sub">اکنون · 🌐</small></span></div><div class="igc">${cap ? hl(cap) : '<span class="sub">متن را بنویسید</span>'}</div>${media(w, 'wide')}<div class="fbb"><span>👍 پسندیدن</span><span>💬 نظر</span><span>↗ اشتراک‌گذاری</span></div></div>`;
-    if (skin) return `<div class="tgm ${skin}"><div class="chh">${esc(c)} · کانال baje724</div><div class="bub">${media(w, 'wide')}${cap ? hl(cap) : '<span class="sub">کپشن را بنویسید</span>'}<small>${fa(new Date().getHours())}:${fa(String(new Date().getMinutes()).padStart(2, '0'))}</small></div></div>`;
+      return `<div class="ig"><div class="igh"><span class="av" style="width:30px;height:30px;font-size:11px">B</span><b>baje724.ir</b></div>${media(w, 'sq', c)}<div class="igc">${cap ? `<b>baje724.ir</b> ${hl(short)}${short.length < cap.length ? ' <span class="more">… بیشتر</span>' : ''}` : '<span class="sub">کپشن را بنویسید تا اینجا دیده شود</span>'}</div></div>`; }
+    if (c === 'فیسبوک') return `<div class="ig fb"><div class="igh"><span class="av" style="width:34px;height:34px;font-size:12px">B</span><span><b>باجه</b><br><small class="sub">اکنون · 🌐</small></span></div><div class="igc">${cap ? hl(cap) : '<span class="sub">متن را بنویسید</span>'}</div>${media(w, 'wide', c)}<div class="fbb"><span>👍 پسندیدن</span><span>💬 نظر</span><span>↗ اشتراک‌گذاری</span></div></div>`;
+    if (skin) return `<div class="tgm ${skin}"><div class="chh">${esc(c)} · کانال baje724</div><div class="bub">${media(w, 'wide', c)}${cap ? hl(cap) : '<span class="sub">کپشن را بنویسید</span>'}<small>${fa(new Date().getHours())}:${fa(String(new Date().getMinutes()).padStart(2, '0'))}</small></div></div>`;
     return `<div class="tgm"><div class="bub">${cap ? hl(cap) : '<span class="sub">متن را بنویسید</span>'}<small>${esc(c)}</small></div></div>`;
   };
   const S_name = () => 'باجه';
@@ -53,8 +53,8 @@
   const tabMain = w => {
     const boss = H.isBoss();
     return `${rdy(w)}<label class="f">عنوان / موضوع</label><input class="in" data-m="title" value="${esc(w.title)}" placeholder="مثلاً: معرفی ابزارهای رایگان">
-    <div class="r2 keep"><div><label class="f">تاریخ انتشار (شمسی)</label><input class="in" data-m="_d" dir="ltr" placeholder="۱۴۰۵/۰۷/۲۰" value="${esc(w._d)}"></div>
-    <div><label class="f">ساعت (وقت تهران)</label><input class="in" data-m="_t" dir="ltr" placeholder="۱۳:۰۰" value="${esc(w._t)}"></div></div>
+    <div class="r2 keep"><div><label class="f">تاریخ انتشار (شمسی)</label><input class="in pickin" data-pick="date" autocomplete="off" data-m="_d" dir="ltr" placeholder="۱۴۰۵/۰۷/۲۰" value="${esc(w._d)}"></div>
+    <div><label class="f">ساعت (وقت تهران)</label><input class="in pickin" data-pick="time" autocomplete="off" data-m="_t" dir="ltr" placeholder="۱۳:۰۰" value="${esc(w._t)}"></div></div>
     <div class="r2"><div><label class="f">مسئول</label><input class="in" data-m="assignee" value="${esc(w.assignee)}"></div>
     <div><label class="f">لینک مقصد در سایت</label><input class="in" data-m="landing" dir="ltr" value="${esc(w.landing || '/')}" placeholder="/abzar/"></div></div>
     <label class="f">قالب</label>${toggles(w.formats, H.FORMATS, 'formats')}
@@ -67,11 +67,30 @@
   const tabCap = w => `<div class="pv" id="pv">${pvHtml(w)}</div><div class="cr"><b>کپشن اصلی</b><span class="cnt" id="cnt-main">${fa((w.caption || '').length)} نویسه</span><button class="btn s sm" data-copy="caption">${ic('copy', 14)}کپی</button></div>
     <textarea class="in" data-m="caption" style="min-height:190px">${esc(w.caption)}</textarea>
     ${w.channels.map(c => `<div class="cr"><b>ویژهٔ ${esc(c)} <small class="sub">(اختیاری؛ خالی یعنی کپشن اصلی)</small></b><button class="btn s sm" data-copy="cap:${esc(c)}">${ic('copy', 14)}کپی</button></div><textarea class="in" data-cap="${esc(c)}">${esc(w.captions[c] || '')}</textarea>`).join('') || '<p class="help">ابتدا در تب «محتوا» شبکه‌ها را انتخاب کنید.</p>'}`;
+  /* لینک رهگیری و فوتر پیام: هر دو اختیاری و قابل تنظیم برای هر پست */
+  const utmHtml = w => { const u = w.utm || {}, on = u.on !== false;
+    return `<div class="cr"><b>لینک رهگیری (UTM)</b></div>
+    <label class="chk"><input type="checkbox" data-ux="on" ${on ? 'checked' : ''}><span>لینک رهگیری به انتهای متن اضافه شود (اینستاگرام لینک کلیک‌پذیر ندارد و همیشه بدون لینک می‌رود).</span></label>
+    ${on ? `<div class="r2"><div><label class="f">medium (نوع کانال)</label><input class="in" dir="ltr" data-ux="medium" value="${esc(u.medium || '')}" placeholder="social"></div><div><label class="f">campaign (کمپین)</label><input class="in" dir="ltr" data-ux="campaign" value="${esc(u.campaign || '')}" placeholder="${esc(w.slug || w.id)}"></div></div>
+    <div class="r2"><div><label class="f">content (شناسهٔ قالب/نسخه)</label><input class="in" dir="ltr" data-ux="content" value="${esc(u.content || '')}" placeholder="${esc(w.formats[0] ? H.fmKey(w.formats[0]) : 'post')}"></div><div><label class="f">term (اختیاری)</label><input class="in" dir="ltr" data-ux="term" value="${esc(u.term || '')}" placeholder=""></div></div>
+    <p class="help">خالی بگذارید تا مقدار پیش‌فرض (خاکستری) استفاده شود. برای هر شبکه می‌توانید source را عوض کنید یا یک لینک کامل دلخواه بگذارید؛ لینک کامل بر همه چیز مقدم است.</p>
+    ${w.channels.map(c => `<div class="cfr utr"><b>${esc(c)}</b><input class="in" dir="ltr" data-us="${esc(c)}" value="${esc((u.sources || {})[c] || '')}" placeholder="source: ${esc(H.chKey(c))}"><input class="in" dir="ltr" data-ul="${esc(c)}" value="${esc((u.links || {})[c] || '')}" placeholder="لینک کامل دلخواه (اختیاری)"><code class="utres" data-uc="${esc(c)}">${esc(c === 'اینستاگرام' ? 'بدون لینک در کپشن' : H.utm(w, c))}</code></div>`).join('') || '<p class="help">اول شبکه‌ها را در تب «محتوا» انتخاب کنید.</p>'}` : ''}`; };
+  const footHtml = w => { const f = w.footer || {}, F = (H.S.tpl && H.S.tpl.footers) || {};
+    return `<div class="cr" style="margin-top:14px"><b>فوتر پیام</b></div>
+    <label class="chk"><input type="checkbox" data-fx="on" ${f.on ? 'checked' : ''}><span>فوتر در انتهای متن اضافه شود (قالبش در تنظیمات ← «فوتر پیام» است؛ جانشین‌ها: {link} {title} {site} {channel}).</span></label>
+    ${f.on ? `<label class="f">متن اختصاصی این پست (اختیاری؛ جای قالب را می‌گیرد)</label><textarea class="in" data-fx="text" placeholder="${esc(F['*'] || 'قالبی تعریف نشده؛ از تنظیمات بسازید.')}">${esc(f.text || '')}</textarea>
+    <div class="cfr">${w.channels.map(c => `<b style="flex:0 0 100%;font-size:12px">${esc(c)}</b><div class="fres">${esc(H.footerText(w, c) || 'فوتری ندارد')}</div>`).join('') || '<span class="help">شبکه‌ای انتخاب نشده.</span>'}</div>` : ''}`; };
   const MAXF = 20 * 1048576;
+  /* فایل هر شبکه: w.channelFiles[شبکه] = نام پیوست‌های همان شبکه؛ نبودن کلید یعنی همهٔ تصویرها (همان منطق ناشر) */
+  const imgNames = w => (w.attachments || []).filter(H.isImg).map(a => a.name);
+  const chosen = (w, c) => { const sel = w.channelFiles && w.channelFiles[c]; return Array.isArray(sel) ? sel : imgNames(w); };
+  const cfHtml = w => { const names = imgNames(w); if (!names.length || !w.channels.length) return '';
+    return `<div class="cr" style="margin-top:14px"><b>تصویرهای هر شبکه</b></div><p class="help">هر شبکه چیدمان خودش را دارد: تلگرام و فیسبوک آلبوم/چندتصویری می‌گیرند؛ بله، روبیکا و ایتا آلبوم ندارند و هر تصویر یک پیام جدا می‌شود، پس برایشان یک تصویر کافی است. فقط تیک‌دارها ارسال می‌شوند.</p>`
+      + w.channels.map(c => `<div class="cfr"><b>${esc(c)}</b>${names.map(n => `<label class="chk"><input type="checkbox" data-cf="${esc(c)}|${esc(n)}" ${chosen(w, c).includes(n) ? 'checked' : ''}><span>${esc(n)}</span></label>`).join('')}</div>`).join(''); };
   const attHtml = w => `<div class="cr"><b>تصویر و فایل‌ها</b><button type="button" class="btn s sm" data-att="pick">${ic('plus', 14)} افزودن</button></div>
     <input type="file" id="att-in" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip" hidden>
     <div class="att" id="att">${(w.attachments || []).map((a, i) => `<div class="at"><div class="th">${H.isImg(a) ? `<img data-i="${i}" alt="${esc(a.name)}">` : ic('file', 26)}</div><div class="ti"><b title="${esc(a.name)}">${esc(a.name)}</b><small>${H.fmtSize(a.size || 0)}${a.pending ? ' · با «ذخیره» آپلود می‌شود' : ''}</small></div><button type="button" class="mini" data-att="dl" data-i="${i}">دانلود</button><button type="button" class="mini" data-att="rm" data-i="${i}" aria-label="حذف">${ic('x', 13, 2.2)}</button></div>`).join('') || `<div class="drop" data-att="pick">${ic('plus', 24)}<span>تصویر را اینجا بکشید یا بزنید</span></div>`}</div>
-    <p class="help" style="margin-top:6px">تصویرهای بزرگ خودکار فشرده می‌شوند. فایل‌ها تا ${H.fa(20)} مگابایت. ویدیو و ریلز را با لینک (مثلاً Google Drive) بگذارید؛ ریپو برای فایل سنگین مناسب نیست.</p>`;
+    <p class="help" style="margin-top:6px">تصویرهای بزرگ خودکار فشرده می‌شوند. فایل‌ها تا ${H.fa(20)} مگابایت. ویدیو و ریلز را با لینک (مثلاً Google Drive) بگذارید؛ ریپو برای فایل سنگین مناسب نیست.</p>${cfHtml(w)}`;
   E.addFiles = async list => {
     const w = E.w; if (!w) return;
     for (const f of [...list]) {
@@ -99,7 +118,7 @@
     return out;
   };
   E.firstImgURL = w => { const a = (w.attachments || []).find(H.isImg); return a ? (a.pending ? a.url : H.fileCache[a.path]) : ''; };
-  const tabLinks = w => `${attHtml(w)}<label class="f">لینک فایل‌های دیگر (ویدیو، Drive، ...) یا مسیر پوشه، هر مورد یک خط</label><textarea class="in" data-m="files">${esc(w.files)}</textarea>
+  const tabLinks = w => `${utmHtml(w)}${footHtml(w)}<hr class="sp">${attHtml(w)}<label class="f">لینک فایل‌های دیگر (ویدیو، Drive، ...) یا مسیر پوشه، هر مورد یک خط</label><textarea class="in" data-m="files">${esc(w.files)}</textarea>
     <div class="links">${(w.files || '').split('\n').filter(x => /^https?:\/\//.test(x.trim())).map(x => `<a href="${esc(x.trim())}" target="_blank" rel="noopener">${esc(x.trim())}</a>`).join('')}</div>
     <div class="cr"><b>لینک رهگیری هر شبکه (UTM)</b></div><p class="help" style="margin:0 0 4px">این لینک‌ها را در بیو، کامنت یا استیکر استوری بگذارید تا بازدید سایت به همین پست برگردد.</p>
     <div class="r2" style="margin-bottom:6px"><div><label class="f">کد کمپین (انگلیسی)</label><input class="in" data-m="slug" dir="ltr" value="${esc(w.slug)}" placeholder="خودکار"></div><div></div></div>
@@ -159,10 +178,19 @@
     const w = E.w; if (!w) return; const t = e.target;
     if (t.dataset.m) { const k = t.dataset.m; w[k] = t.type === 'checkbox' ? t.checked : t.value; if (k === 'caption') { const c = H.$('#cnt-main'); if (c) c.textContent = fa(t.value.length) + ' نویسه'; E.updatePreview(); } if (k === 'insurance' || k === 'legalApproved') {} }
     else if (t.dataset.cap) { w.captions[t.dataset.cap] = t.value; E.updatePreview(); }
+    else if (t.dataset.ux || t.dataset.us || t.dataset.ul || t.dataset.fx) {
+      w.utm = w.utm || {}; w.footer = w.footer || {};
+      if (t.dataset.ux) w.utm[t.dataset.ux] = t.value; else if (t.dataset.us) (w.utm.sources = w.utm.sources || {})[t.dataset.us] = t.value; else if (t.dataset.ul) (w.utm.links = w.utm.links || {})[t.dataset.ul] = t.value; else w.footer[t.dataset.fx] = t.value;
+      H.$$('.utres').forEach(el => { const c = el.dataset.uc; el.textContent = c === 'اینستاگرام' ? 'بدون لینک در کپشن' : H.utm(w, c); });
+      H.$$('.fres').forEach((el, i) => { el.textContent = H.footerText(w, w.channels[i]) || 'فوتری ندارد'; });
+      E.updatePreview && E.updatePreview();
+    }
     else if (t.dataset.url) w.postUrls[t.dataset.url] = t.value.trim();
     else if (t.dataset.met) { const [c, k] = t.dataset.met.split('|'); w.metrics[c] = w.metrics[c] || {}; const v = H.en(t.value).replace(/[^\d.]/g, ''); if (v === '') delete w.metrics[c][k]; else w.metrics[c][k] = Number(v); }
   });
-  document.addEventListener('change', e => { if (e.target.id === 'att-in') { E.addFiles(e.target.files); e.target.value = ''; return; } const t = e.target; if (E.w && t.dataset.m && (t.dataset.m === 'insurance' || t.dataset.m === 'legalApproved')) E.render(); });
+  document.addEventListener('change', e => { const t0 = e.target; if (E.w && t0.dataset && (t0.dataset.ux === 'on' || t0.dataset.fx === 'on') && t0.type === 'checkbox') { if (t0.dataset.ux) { E.w.utm = E.w.utm || {}; E.w.utm.on = t0.checked; } else { E.w.footer = E.w.footer || {}; E.w.footer.on = t0.checked; } E.render(); return; }
+    const cf = e.target.dataset && e.target.dataset.cf; if (cf && E.w) { const [c, n] = cf.split('|'), w = E.w; const cur = chosen(w, c).slice(); const i = cur.indexOf(n); if (e.target.checked && i < 0) cur.push(n); if (!e.target.checked && i >= 0) cur.splice(i, 1); const order = imgNames(w); w.channelFiles = { ...(w.channelFiles || {}), [c]: order.filter(x => cur.includes(x)) }; E.updatePreview(); return; }
+    if (e.target.id === 'att-in') { E.addFiles(e.target.files); e.target.value = ''; return; } const t = e.target; if (E.w && t.dataset.m && (t.dataset.m === 'insurance' || t.dataset.m === 'legalApproved')) E.render(); });
   document.addEventListener('click', async e => {
     const w = E.w; if (!w) return; const el = e.target.closest('[data-e],[data-tab],[data-stage],.tgl,[data-copy],[data-pv],[data-pvfull],[data-att]'); if (!el || !el.closest('#editor')) return;
     if (el.dataset.att) {

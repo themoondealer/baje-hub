@@ -64,7 +64,7 @@
   app.logout = () => { localStorage.removeItem('baje-hub-auth'); S.mode = null; S.posts = []; $('#shell').hidden = true; $('#login').hidden = false; };
   app.enterGithub = async (token, repo, name, role, pin, savedHash, manual) => {
     S.mode = 'github'; S.token = token; S.repo = repo; S.user = await H.ghUser(); S.display = (name || '').trim();
-    S.cfg = await H.store.config(); S.pinCfg = S.cfg.bossPin || null; S.role = 'admin'; let pinHash = '';
+    S.tpl = await H.store.templates(); S.cfg = await H.store.config(); S.pinCfg = S.cfg.bossPin || null; S.role = 'admin'; let pinHash = '';
     if (role === 'boss') {
       if (!S.pinCfg) S.role = 'boss';
       else {
@@ -121,14 +121,21 @@
     if (a === 'palette') return app.palette();
     if (a === 'day') return app.newPost(el.dataset.day + 'T13:00');
     if (a === 'mode') { U.mode = el.dataset.m; return app.render(); }
-    if (a === 'cprev' || a === 'cnext') { const d = a === 'cnext' ? 1 : -1; let { y, m } = U.cal; m += d; if (m > 12) { m = 1; y++; } if (m < 1) { m = 12; y--; } U.cal = { y, m }; return app.render(); }
-    if (a === 'ctoday') { U.cal = null; return app.render(); }
+    if (a === 'cprev' || a === 'cnext') { const d = a === 'cnext' ? 1 : -1, C = U.cal; if (C.mode === 'week') { const b = new Date((C.wk || H.todayISO()) + 'T00:00:00Z'); b.setUTCDate(b.getUTCDate() + 7 * d); const j = H.toJ(b); U.cal = { ...C, wk: H.isoDate(b), y: j.y, m: j.m }; return app.render(); } let { y, m } = C; m += d; if (m > 12) { m = 1; y++; } if (m < 1) { m = 12; y--; } U.cal = { ...C, y, m, wk: H.isoDate(H.fromJ(y, m, 1)) }; return app.render(); }
+    if (a === 'cmode') { U.cal = { ...U.cal, mode: el.dataset.m }; return app.render(); }
+    if (a === 'cweek') { const j = H.isoToJ(el.dataset.day); U.cal = { ...U.cal, mode: 'week', wk: el.dataset.day, y: j.y, m: j.m }; return app.render(); }
+    if (a === 'ctoday') { U.cal = { mode: (U.cal && U.cal.mode) || 'month' }; return app.render(); }
     if (a === 'tbl') { const c = el.closest('.cc'); const t = $('.ct', c), v = $('.cv', c); t.hidden = !t.hidden; v.hidden = !t.hidden; return; }
     if (a === 'theme') { S.settings.theme = el.dataset.t; H.saveSettings(); applyTheme(); return app.render(); }
     if (a === 'logout') return app.logout();
     if (a === 'savename') { S.display = $('#s-name').value.trim(); try { const x = JSON.parse(localStorage.getItem('baje-hub-auth') || 'null'); if (x) { x.name = S.display; localStorage.setItem('baje-hub-auth', JSON.stringify(x)); } } catch (e) {} H.toast('نام ذخیره شد'); return app.render(); }
     if (a === 'export') return H.download('baje-posts-' + H.todayISO() + '.json', JSON.stringify(S.posts.map(p => { const c = { ...p }; delete c._sha; return c; }), null, 2));
     if (a === 'savesite') { S.settings.siteUrl = $('#s-site').value.trim() || 'https://baje724.ir'; S.settings.statsUrl = $('#s-stats').value.trim(); H.saveSettings(); S.siteStats = null; if (!S.settings.statsUrl) return H.toast('نشانی سایت ذخیره شد'); try { S.siteStats = await H.store.siteStats(); H.toast('اتصال برقرار شد ✓'); } catch (x) { H.toast(x.message, 5000, 'bad'); } return; }
+    if (a === 'savetpl') {
+      const footers = { '*': $('#t-all').value.trim() }; H.$$('[data-tpl]').forEach(el => { if (el.value.trim()) footers[el.dataset.tpl] = el.value.trim(); }); if (!footers['*']) delete footers['*'];
+      try { await H.store.saveTemplates({ ...(S.tpl || {}), footers }); S.tpl = { ...(S.tpl || {}), footers }; H.toast('قالب فوتر ذخیره شد ✓'); } catch (x) { H.toast(x.message, 5000, 'bad'); }
+      return;
+    }
     if (a === 'savepin') {
       const np = $('#s-pin-new').value.trim(), op = $('#s-pin-old') ? $('#s-pin-old').value.trim() : '';
       if (!/^\d{4,12}$/.test(H.en(np))) return H.toast('رمز جدید باید ۴ تا ۱۲ رقم باشد', 3500, 'bad');
@@ -160,12 +167,12 @@
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !tok) { x.textContent = 'مخزن را مثل owner/repo و توکن را وارد کنید'; x.hidden = false; return; }
     $('#lgo').disabled = true; try { await app.enterGithub(tok, repo, $('#lname').value, $('#lrole .on').dataset.r, $('#lpin').value, undefined, true); } catch (e) { x.textContent = e.message; x.hidden = false; } $('#lgo').disabled = false;
   };
-  $('#ldemo').onclick = () => { S.mode = 'demo'; S.user = 'نمونه'; S.display = 'نمونه'; S.role = $('#lrole .on').dataset.r; showApp(); };
+  $('#ldemo').onclick = async () => { S.mode = 'demo'; S.tpl = await H.store.templates(); S.user = 'نمونه'; S.display = 'نمونه'; S.role = $('#lrole .on').dataset.r; showApp(); };
   $('#lrole').onclick = e => { const b = e.target.closest('button'); if (!b) return; $$('#lrole button').forEach(x => x.classList.toggle('on', x === b)); $('#lpinw').hidden = b.dataset.r !== 'boss'; };
   applyTheme();
   (async () => {
     const p = new URLSearchParams(location.search);
-    if (p.has('demo')) { S.mode = 'demo'; S.user = 'نمونه'; S.display = 'نمونه'; S.role = p.get('role') === 'admin' ? 'admin' : 'boss'; return showApp(); }
+    if (p.has('demo')) { S.mode = 'demo'; S.tpl = await H.store.templates(); S.user = 'نمونه'; S.display = 'نمونه'; S.role = p.get('role') === 'admin' ? 'admin' : 'boss'; return showApp(); }
     try { const a = JSON.parse(localStorage.getItem('baje-hub-auth') || 'null'); if (a) { await app.enterGithub(a.token, a.repo, a.name, a.role, '', a.pinHash); return; } } catch (e) {}
     $('#login').hidden = false;
   })();

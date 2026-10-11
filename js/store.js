@@ -18,7 +18,7 @@
 
   const b64 = s => btoa(unescape(encodeURIComponent(s)));
   async function gh(url, opt = {}) {
-    const r = await fetch(url, { ...opt, headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' } });
+    const r = await fetch(url, { cache: 'no-store', ...opt, headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' } });
     if (r.status === 401) throw Object.assign(new Error('توکن نامعتبر یا منقضی شده است'), { auth: true });
     if (r.status === 403 || r.status === 404) throw new Error('دسترسی توکن کافی نیست (مخزن و Contents: Read and write را بررسی کنید)');
     if (r.status === 409 || r.status === 422) throw Object.assign(new Error('کس دیگری همین پست را تغییر داده؛ فهرست دوباره بارگذاری شد'), { conflict: true });
@@ -30,7 +30,7 @@
   const seed = () => { const t = Date.now(); return [
     { id: 'p-intro', slug: 'post-00-moarefi', landing: '/', title: 'معرفی باجه', formats: ['کاروسل'], channels: ['اینستاگرام', 'تلگرام'], due: '2026-10-07T13:00', assignee: 'سارا', insurance: false, legalApproved: false, stage: 'draft', brief: 'کاور سفید. متن‌ها فقط از صفحهٔ اول baje724.ir.', caption: 'باجه؛ لیست بیمه تأمین اجتماعی، آنلاین و بدون نصب نرم‌افزار 📌\n\nهمان کار «لیست دیسک»، این‌بار در مرورگر.', captions: {}, files: 'posts/00-moarefi/', postUrls: {}, metrics: {}, history: [], updatedAt: t },
     { id: 'p-mohlat', slug: 'post-01-mohlat', landing: '/abzar/', title: 'مهلت ارسال لیست بیمه ۱۴۰۵', formats: ['کاروسل', 'ریلز'], channels: ['اینستاگرام', 'تلگرام', 'فیسبوک'], due: '2026-10-10T13:00', assignee: 'علی', insurance: true, legalApproved: false, stage: 'boss', brief: 'جدول ۱۲ ماه با اصلاح تعطیلات؛ منتظر تأیید رئیس.', caption: 'مهلت ارسال لیست بیمه ۱۴۰۵؛ جدول کامل ۱۲ ماه 📌', captions: {}, files: 'posts/01-mohlat/', postUrls: {}, metrics: {}, history: [], updatedAt: t - 3600e3 },
-    { id: 'p-tools', slug: 'post-02-abzar', landing: '/abzar/', title: 'ابزارهای رایگان باجه', formats: ['کاروسل'], channels: ['اینستاگرام', 'فیسبوک', 'تلگرام'], due: '2026-10-14T13:00', assignee: 'مریم', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', postUrls: {}, metrics: {}, history: [], updatedAt: t - 7200e3 },
+    { id: 'p-tools', slug: 'post-02-abzar', landing: '/abzar/', title: 'ابزارهای رایگان باجه', formats: ['کاروسل'], channels: ['اینستاگرام', 'فیسبوک', 'تلگرام'], due: '2026-10-14T13:00', assignee: 'مریم', insurance: false, legalApproved: false, stage: 'idea', brief: '', caption: '', captions: {}, footer: { on: true }, files: '', postUrls: {}, metrics: {}, history: [], updatedAt: t - 7200e3 },
     { id: 'p-old', slug: 'post-old-1', landing: '/', title: 'نمونه: پست منتشرشده', formats: ['ریلز'], channels: ['اینستاگرام', 'تلگرام'], due: '2026-09-28T20:30', assignee: 'علی', insurance: false, legalApproved: false, stage: 'done', brief: '', caption: '', captions: {}, files: '', postUrls: {}, metrics: { 'اینستاگرام': { views: 1840, likes: 96, comments: 8, saves: 41, shares: 12, linkClicks: 33, followers: 14 }, 'تلگرام': { views: 420, likes: 18 } }, history: [], updatedAt: t - 86400e3 * 8 }]; };
 
   H.store = {
@@ -58,6 +58,17 @@
       if (S.mode === 'demo') return {};
       try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/config.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json' } }); if (r.ok) { const c = await r.json(); if (c && typeof c === 'object') return c; } } catch (e) {}
       return {};
+    },
+    async templates() {
+      if (S.mode === 'demo') { try { return JSON.parse(localStorage.getItem('baje-hub-tpl') || '{}'); } catch (e) { return {}; } }
+      try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/templates.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json', 'Cache-Control': 'no-cache' }, cache: 'no-store' }); if (r.ok) { const c = await r.json(); if (c && typeof c === 'object') return c; } } catch (e) {}
+      return {};
+    },
+    async saveTemplates(tpl) {
+      if (S.mode === 'demo') { localStorage.setItem('baje-hub-tpl', JSON.stringify(tpl)); return; }
+      let sha; try { const r = await gh(`https://api.github.com/repos/${S.repo}/contents/team/templates.json`); sha = r.sha; } catch (e) {}
+      const body = { message: 'hub: templates', content: b64(JSON.stringify(tpl, null, 2)) }; if (sha) body.sha = sha;
+      await gh(`https://api.github.com/repos/${S.repo}/contents/team/templates.json`, { method: 'PUT', body: JSON.stringify(body) });
     },
     async saveConfig(cfg) {
       if (S.mode === 'demo') return;
@@ -132,11 +143,31 @@
   };
   H.newId = () => 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   H.blank = () => ({ id: H.newId(), slug: '', landing: '/', title: '', formats: [], channels: [], due: '', assignee: '', insurance: false, legalApproved: false, autoPublish: false, stage: 'idea', brief: '', caption: '', captions: {}, files: '', attachments: [], postUrls: {}, metrics: {}, history: [] });
+  /* لینک رهگیری: هر بخش قابل تنظیم است؛ p.utm = { on, medium, campaign, content, term, sources:{شبکه}, links:{شبکه: لینک کامل} } */
   H.utm = (p, channelName) => {
+    const u = p.utm || {}, lk = u.links && u.links[channelName]; if (lk && lk.trim()) return lk.trim();
     const base = (S.settings.siteUrl || '').replace(/\/+$/, ''), path = p.landing || '/';
-    const u = /^https?:\/\//.test(path) ? path : base + (path.startsWith('/') ? path : '/' + path);
-    const q = new URLSearchParams({ utm_source: H.chKey(channelName), utm_medium: 'social', utm_campaign: p.slug || p.id, utm_content: p.formats[0] ? H.fmKey(p.formats[0]) : 'post' });
-    return u + (u.includes('?') ? '&' : '?') + q.toString();
+    const x = /^https?:\/\//.test(path) ? path : base + (path.startsWith('/') ? path : '/' + path);
+    const q = new URLSearchParams({ utm_source: (u.sources && u.sources[channelName] || '').trim() || H.chKey(channelName), utm_medium: (u.medium || '').trim() || 'social', utm_campaign: (u.campaign || '').trim() || p.slug || p.id, utm_content: (u.content || '').trim() || (p.formats[0] ? H.fmKey(p.formats[0]) : 'post') });
+    if ((u.term || '').trim()) q.set('utm_term', u.term.trim());
+    return x + (x.includes('?') ? '&' : '?') + q.toString();
+  };
+  /* قالب فوتر در team/templates.json: { footers: { '*': متن پیش‌فرض، '<شبکه>': متن ویژهٔ آن شبکه } }؛ جانشین‌ها: {link} {title} {site} {channel} */
+  H.footerText = (p, ch) => {
+    const f = p.footer; if (!f || !f.on) return '';
+    const own = (f.text || '').trim(), F = (S.tpl && S.tpl.footers) || {};
+    const raw = own || (F[ch] !== undefined ? F[ch] : F['*']) || ''; if (!raw.trim()) return '';
+    const link = (p.utm && p.utm.on === false) || ch === 'اینستاگرام' ? '' : H.utm(p, ch);
+    return raw.replace(/\{link\}/g, link).replace(/\{title\}/g, p.title || '').replace(/\{site\}/g, (S.settings.siteUrl || '').replace(/\/+$/, '')).replace(/\{channel\}/g, ch).replace(/\n{3,}/g, '\n\n').trim();
+  };
+  /* متن نهایی هر شبکه؛ باید با publisher/publish.mjs (buildText) یکی باشد: کپشن، فوتر، سپس لینک (اگر در فوتر نیامده) */
+  H.finalText = (p, ch) => {
+    let t = (p.captions[ch] || p.caption || '').trim();
+    const F = (S.tpl && S.tpl.footers) || {}, own = ((p.footer && p.footer.text) || '').trim(), raw = own || (F[ch] !== undefined ? F[ch] : F['*']) || '';
+    const foot = H.footerText(p, ch); if (foot) t += (t ? '\n\n' : '') + foot;
+    const wantLink = ch !== 'اینستاگرام' && !(p.utm && p.utm.on === false), link = wantLink ? H.utm(p, ch) : '';
+    if (link && !(foot && raw.includes('{link}')) && !t.includes(link)) t += (t ? '\n\n' : '') + link;
+    return t;
   };
   /* جمع آمار دستی یک پست */
   H.sumMetric = (p, k) => { let s = null; Object.values(p.metrics || {}).forEach(m => { if (m && m[k] !== undefined && m[k] !== null && m[k] !== '' && !isNaN(m[k])) s = (s || 0) + Number(m[k]); }); return s; };
