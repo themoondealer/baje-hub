@@ -121,6 +121,39 @@
       ${body}<div class="agenda ${mode === 'agenda' ? 'on' : ''}">${ag || '<div class="empty">در این ماه پستی نیست.</div>'}</div></div>`;
   };
 
+  /* ---------- ایده‌ها و تقویم محتوا ---------- */
+  const DEC = { go: ['کار کنیم', 'ok'], later: ['بعداً', 'a'], drop: ['حذف', 'w'] };
+  H.IDEA_FILTER = H.IDEA_FILTER || { pillar: '', dec: '', month: '' };
+  V.ideas = () => {
+    const F = H.IDEA_FILTER, all = S.posts.filter(p => p.idea), site = (S.settings.siteUrl || '').replace(/\/+$/, '');
+    const pillars = [...new Set(all.map(p => p.idea.pillar))].sort(), months = [...new Set(all.filter(p => p.due).map(p => H.monthKey(p.due)))].sort();
+    const L = all.filter(p => (!F.pillar || p.idea.pillar === F.pillar) && (!F.month || String(H.monthKey(p.due || '')) === F.month) && (!F.dec || (F.dec === 'none' ? !p.idea.decision : p.idea.decision === F.dec)));
+    const cnt = k => all.filter(p => p.idea.decision === k).length, none = all.filter(p => !p.idea.decision).length;
+    const intro = `<details class="panel iintro" open><summary>دربارهٔ این صفحه: در جلسه دربارهٔ چه چیزی تصمیم می‌گیریم؟</summary>
+      <p>اینجا <b>${fa(all.length)} پیشنهاد موضوع پست</b> برای هفته‌های پیش رو (تا مرداد ۱۴۰۶، هفته‌ای یکی) است. موضوع‌ها از خود سایت باجه آمده‌اند: ابزارها، مقاله‌ها، راهنماها و ماژول‌ها. این‌ها <b>پیشنهادند، نه تصمیم</b>.</p>
+      <ol><li><b>کدام را بسازیم؟</b> برای هر ایده «کار کنیم»، «بعداً» یا «حذف» را بزنید. پیشنهاد من فقط راهنماست: ارزش بالا و تلاش کم اول.</li>
+      <li><b>موضوع‌های قانونی و تاریخ‌دار</b> (برچسب «نیاز به تأیید رئیس») قبل از ساخت باید متن و منبع رسمی‌شان را رئیس ببیند.</li>
+      <li><b>ادعاها</b> مثل «۳۵ سال تجربه» یا «لیست‌های بیش از ۳۰۰۰ نفر» با مالک و رئیس است.</li>
+      <li><b>ساعت و روز انتشار</b> فرضیهٔ آزمون‌اند و بعد از چند پست با داده‌ی واقعی اصلاح می‌شوند.</li></ol>
+      <p class="sub">بعد از جلسه: «کار کنیم»ها با «ساخت پیش‌نویس» وارد تولید می‌شوند. خروجی CSV برای مرور روی کاغذ یا اکسل است.</p></details>`;
+    const sum = `<div class="isum"><div><b>${fa(all.length)}</b><small>ایده</small></div><div class="ok"><b>${fa(cnt('go'))}</b><small>کار می‌کنیم</small></div><div class="a"><b>${fa(cnt('later'))}</b><small>بعداً</small></div><div class="w"><b>${fa(cnt('drop'))}</b><small>حذف</small></div><div><b>${fa(none)}</b><small>بدون تصمیم</small></div></div>`;
+    const sel = (k, opts, ph) => `<select class="in" data-ifl="${k}"><option value="">${ph}</option>${opts.map(([val, n]) => `<option value="${esc(val)}" ${F[k] === String(val) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+    const pname = k => (all.find(p => p.idea.pillar === k) || { idea: {} }).idea.pillarName || k;
+    const filt = `<div class="filters">${sel('pillar', pillars.map(k => [k, pname(k)]), 'همهٔ ستون‌های محتوا')}${sel('month', months.map(m => [m, H.MONTHS[(m % 100) - 1] + ' ' + fa(Math.floor(m / 100))]), 'همهٔ ماه‌ها')}${sel('dec', [['none', 'بدون تصمیم'], ['go', 'کار کنیم'], ['later', 'بعداً'], ['drop', 'حذف']], 'همهٔ تصمیم‌ها')}<button class="btn s sm" data-act="ideaexport">${ic('download', 16)}خروجی برای جلسه (CSV)</button></div>`;
+    if (!all.length) return H.empty('sparkle', 'هنوز ایده‌ای ثبت نشده.', '');
+    const item = p => { const i = p.idea, d = i.decision, rec = DEC[i.rec], lv = { 'زیاد': 3, 'متوسط': 2, 'کم': 1 };
+      return `<div class="idea ${d ? 'dec-' + d : ''}"><div class="ih"><div><b class="it">${esc(p.title)}</b><small>${esc(H.fmtDue(p.due))} · ${esc((p.formats || []).join('، '))} · ${esc(i.pillarName || i.pillar)}</small></div><span class="pill ${rec && rec[1]}" title="پیشنهاد من">پیشنهاد: ${rec ? rec[0] : '—'}</span></div>
+        <p class="iw">${esc(i.why)}</p>
+        <div class="im"><span class="pill" title="ارزش برای مخاطب">ارزش: ${esc(i.value)}</span><span class="pill" title="تلاش تولید">تلاش: ${esc(i.effort)}</span>${p.insurance ? `<span class="pill w">${ic('shield', 12)}نیاز به تأیید رئیس</span>` : ''}${i.source ? `<a class="pill" href="${esc(site + i.source)}" target="_blank" rel="noopener">منبع در سایت ↗</a>` : ''}</div>
+        ${i.risk ? `<p class="ir">${ic('alert', 14)} ${esc(i.risk)}</p>` : ''}
+        <div class="ia"><div class="seg" style="margin:0">${Object.entries(DEC).map(([k, [n]]) => `<button class="${d === k ? 'on' : ''}" data-act="idecide" data-id="${esc(p.id)}" data-d="${k}">${n}</button>`).join('')}</div>
+        <input class="in" data-inote="${esc(p.id)}" value="${esc(i.note || '')}" placeholder="یادداشت جلسه (اختیاری)">
+        ${d === 'go' && p.stage === 'idea' ? `<button class="btn p sm" data-act="idraft" data-id="${esc(p.id)}">ساخت پیش‌نویس</button>` : (p.stage !== 'idea' ? `<span class="pill ok">${esc(H.stage(p.stage).name)}</span>` : '')}</div></div>`; };
+    let html = '', cur = '';
+    byDue(L).forEach(p => { const mk = p.due ? H.monthKey(p.due) : 0; if (mk !== cur) { cur = mk; html += `<h3 class="imh">${mk ? H.MONTHS[(mk % 100) - 1] + ' ' + fa(Math.floor(mk / 100)) : 'بدون تاریخ'}</h3>`; } html += item(p); });
+    return intro + sum + filt + (html || H.empty('search', 'با این فیلتر ایده‌ای نیست.', '')) ;
+  };
+
   /* ---------- آمار ---------- */
   V.stats = () => {
     const P = S.posts, done = P.filter(p => p.stage === 'done'), t = today(), site = S.siteStats;

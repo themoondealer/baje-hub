@@ -307,6 +307,18 @@ hr.sp{border:0;border-top:1px solid var(--line);margin:16px 0}
 .pkf{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}.pkl{font-size:11.5px;font-weight:800;color:var(--muted);display:block;margin:8px 0 4px}
 .pkq{border:0;background:var(--surface2);color:inherit;font:inherit;font-size:12.5px;font-weight:800;border-radius:999px;padding:7px 12px;cursor:pointer}.pkq:hover{background:var(--tint)}.pkq.sel{background:var(--brand);color:#fff}.pkq.x{color:var(--warn)}.pkq.ok{background:var(--brand);color:#fff;margin-inline-start:auto}
 .pkt{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}.pkt.m{grid-template-columns:repeat(4,1fr)}
+/* ایده‌ها */
+.isum{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}.isum>div{background:var(--surface);border-radius:16px;padding:12px;text-align:center;box-shadow:var(--sh)}.isum b{display:block;font-size:24px;font-weight:900}.isum small{color:var(--muted);font-weight:700;font-size:12px}
+.isum .ok b{color:var(--ok)}.isum .a b{color:var(--amber)}.isum .w b{color:var(--warn)}
+.imh{font-size:15px;font-weight:900;margin:18px 4px 8px;color:var(--muted)}
+.idea{background:var(--surface);border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh);border-inline-start:4px solid var(--line)}
+.idea.dec-go{border-inline-start-color:var(--ok)}.idea.dec-later{border-inline-start-color:var(--amber)}.idea.dec-drop{opacity:.55;border-inline-start-color:var(--warn)}
+.idea .ih{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.idea .it{font-size:15.5px;font-weight:900;display:block}.idea small{color:var(--muted);font-weight:700;font-size:12px}
+.idea .iw{font-size:13px;line-height:1.8;margin:6px 0;color:var(--ink)}.idea .im{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.idea .ir{font-size:12.5px;color:var(--warn);display:flex;gap:6px;align-items:flex-start;margin:4px 0 8px}
+.idea .ia{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.idea .ia .in{flex:1;min-width:160px;padding:7px 10px;font-size:13px}
+@media(max-width:900px){.isum{grid-template-columns:repeat(3,1fr)}}
+.iintro{margin-bottom:14px;padding:14px 16px}.iintro summary{cursor:pointer;font-weight:900;font-size:14.5px}.iintro p,.iintro li{font-size:13px;line-height:1.9;margin:6px 0}.iintro ol{padding-inline-start:20px;margin:6px 0}
 /* نوار حجم */
 .sz{height:12px;border-radius:8px;background:var(--surface2);overflow:hidden}.sz i{display:block;height:100%;border-radius:8px;background:var(--ok);transition:width .6s}.sz.mid i{background:var(--amber)}.sz.bad i{background:var(--warn)}
 /* پیوست‌ها */

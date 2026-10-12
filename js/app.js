@@ -2,9 +2,9 @@
 (function (H) {
   const { $, $$, esc, fa, ic, S, U } = Object.assign({}, H, { S: H.S, U: H.U });
   const app = H.app = {};
-  const NAV = [['dash', 'داشبورد', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['list', 'فهرست', 'list'], ['stats', 'آمار', 'chart'], ['settings', 'تنظیمات', 'settings']];
-  const TITLES = { dash: 'داشبورد', board: 'تخته محتوا', cal: 'تقویم انتشار', list: 'فهرست پست‌ها', stats: 'آمار و نتیجه', settings: 'تنظیمات' };
-  const MOBILE = [['dash', 'خانه', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['stats', 'آمار', 'chart'], ['settings', 'بیشتر', 'settings']];
+  const NAV = [['dash', 'داشبورد', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['ideas', 'ایده‌ها', 'sparkle'], ['list', 'فهرست', 'list'], ['stats', 'آمار', 'chart'], ['settings', 'تنظیمات', 'settings']];
+  const TITLES = { dash: 'داشبورد', board: 'تخته محتوا', cal: 'تقویم انتشار', ideas: 'ایده‌ها و تقویم محتوا', list: 'فهرست پست‌ها', stats: 'آمار و نتیجه', settings: 'تنظیمات' };
+  const MOBILE = [['dash', 'خانه', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['ideas', 'ایده', 'sparkle'], ['settings', 'بیشتر', 'settings']];
 
   const applyTheme = () => { const t = S.settings.theme; if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); };
   const setSync = (k, txt) => { const s = $('#sync'); if (!s) return; s.className = 'sync ' + k; s.innerHTML = `<i></i><span>${txt}</span>`; };
@@ -114,6 +114,19 @@
     const el = e.target.closest('[data-act]'); if (!el || !S.mode) return; const a = el.dataset.act;
     if (a === 'open') { e.stopPropagation(); return app.open(el.dataset.id); }
     if (a === 'next') { e.stopPropagation(); const p = S.posts.find(x => x.id === el.dataset.id); const i = H.STAGES.findIndex(s => s.id === p.stage); return app.move(p.id, H.STAGES[i + 1].id); }
+    if (a === 'idecide' || a === 'idraft') {
+      e.stopPropagation(); const p = S.posts.find(x => x.id === el.dataset.id); if (!p || !p.idea) return;
+      if (a === 'idraft') return app.move(p.id, 'draft');
+      const d = p.idea.decision === el.dataset.d ? '' : el.dataset.d, np = { ...p, idea: { ...p.idea, decision: d }, history: [...(p.history || []), `${new Date().toLocaleString('fa-IR')} — ${H.who() || 'ناشناس'}: تصمیم ایده ← ${d || 'بدون تصمیم'}`] };
+      p.idea = np.idea; app.render();
+      try { await H.store.save(np); await app.load(true); } catch (x) { H.toast(x.message, 4500, 'bad'); await app.load(true); }
+      return;
+    }
+    if (a === 'ideaexport') {
+      const q = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"', DN = { go: 'کار کنیم', later: 'بعداً', drop: 'حذف' };
+      const rows = [['تاریخ', 'ساعت', 'عنوان', 'ستون محتوا', 'قالب', 'ارزش', 'تلاش', 'پیشنهاد', 'تصمیم', 'یادداشت', 'نیاز به رئیس', 'ریسک', 'منبع']].concat(S.posts.filter(p => p.idea).sort((x, y) => (x.due || '9').localeCompare(y.due || '9')).map(p => [(p.due || '').slice(0, 10) ? H.fmtDay(p.due) : '', (p.due || '').slice(11, 16), p.title, p.idea.pillarName, (p.formats || []).join('، '), p.idea.value, p.idea.effort, DN[p.idea.rec] || '', DN[p.idea.decision] || '', p.idea.note, p.insurance ? 'بله' : '', p.idea.risk, p.idea.source]));
+      const csv = '\ufeff' + rows.map(r => r.map(q).join(',')).join('\n'), b = new Blob([csv], { type: 'text/csv;charset=utf-8' }), l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = 'content-calendar-ideas.csv'; l.click(); setTimeout(() => URL.revokeObjectURL(l.href), 2000); return;
+    }
     if (a === 'go') return app.go(el.dataset.tab);
     if (a === 'stage') { U.f.stage = el.dataset.stage; U.mode = 'list'; return app.go('board', true); }
     if (a === 'new') return app.newPost();
@@ -148,6 +161,11 @@
       } catch (x) { H.toast(x.message, 5000, 'bad'); }
       return;
     }
+  });
+  document.addEventListener('change', async e => {
+    const t = e.target; if (!S.mode || !t.dataset) return;
+    if (t.dataset.ifl) { H.IDEA_FILTER[t.dataset.ifl] = t.value; return app.render(); }
+    if (t.dataset.inote) { const p = S.posts.find(x => x.id === t.dataset.inote); if (!p || !p.idea || (p.idea.note || '') === t.value.trim()) return; const np = { ...p, idea: { ...p.idea, note: t.value.trim() } }; p.idea = np.idea; try { await H.store.save(np); await app.load(true); H.toast('یادداشت ذخیره شد'); } catch (x) { H.toast(x.message, 4500, 'bad'); await app.load(true); } }
   });
   document.addEventListener('keydown', e => { const el = e.target; if ((e.key === 'Enter' || e.key === ' ') && el.matches && el.matches('.card[data-act=open]')) { e.preventDefault(); app.open(el.dataset.id); } });
   document.addEventListener('input', e => { if (e.target.id === 'q') { U.q = e.target.value; const pos = e.target.selectionStart; if (U.tab === 'dash' || U.tab === 'settings' || U.tab === 'stats') { U.tab = 'board'; U.mode = 'list'; } app.render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); } });
