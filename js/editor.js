@@ -128,16 +128,33 @@
       <div class="mg" style="margin-top:10px">${H.METRICS.map(x => `<div><label>${x.n}</label><input class="in" inputmode="numeric" data-met="${esc(c)}|${x.k}" value="${m[x.k] === undefined || m[x.k] === null ? '' : esc(fa(m[x.k]))}"></div>`).join('')}</div></div>`; }).join('') || '<p class="help">شبکه‌ای انتخاب نشده.</p>'}`;
   const tabHist = w => `<ul class="hist" style="padding:0;margin-top:10px">${(w.history || []).slice().reverse().map(h => `<li>${esc(h)}</li>`).join('') || '<li>هنوز تغییر مرحله‌ای ثبت نشده.</li>'}</ul>`;
 
+  /* شبکه‌هایی که انتشارشان خودکار است؛ بقیه با «بستهٔ انتشار» دستی منتشر می‌شوند */
+  const AUTO = ['تلگرام', 'بله', 'روبیکا', 'ایتا', 'لینکدین'];
+  const tabPub = w => {
+    const man = w.channels.filter(c => !AUTO.includes(c)), aut = w.channels.filter(c => AUTO.includes(c)), imgs = (w.attachments || []).filter(H.isImg);
+    const att = imgs.length ? `<div class="cr"><b>تصویرها</b>${imgs.length > 1 ? `<button type="button" class="btn s sm" data-att="dlall">دانلود همه</button>` : ''}</div><div class="att">${imgs.map(a => `<div class="at"><div class="ti"><b title="${esc(a.name)}">${esc(a.name)}</b><small>${H.fmtSize(a.size || 0)}</small></div><button type="button" class="mini" data-att="dl" data-i="${w.attachments.indexOf(a)}">دانلود</button></div>`).join('')}</div>` : '<p class="help">تصویری ضمیمه نشده. در تب «فایل و لینک» اضافه کنید.</p>';
+    const card = c => `<div class="chm"><h4>${esc(c)}</h4>
+      <div class="cr"><b>کپشن</b><button type="button" class="btn s sm" data-copy="cap:${esc(c)}">${ic('copy', 14)} کپی</button></div>
+      <textarea class="in" readonly style="min-height:110px">${esc(w.captions[c] || w.caption || '')}</textarea>
+      <div class="utm"><b>لینک رهگیری</b><code>${esc(H.utm(w, c))}</code><button class="btn s sm" data-copy="utm:${esc(c)}" aria-label="کپی">${ic('copy', 14)}</button></div>
+      <label class="f">لینک پست بعد از انتشار</label><input class="in" dir="ltr" data-url="${esc(c)}" value="${esc(w.postUrls[c] || '')}" placeholder="https://...">
+      ${w.postUrls[c] ? '<p class="help">✓ ثبت شده</p>' : ''}</div>`;
+    return `<p class="help" style="margin-top:12px">برای شبکه‌هایی که انتشار خودکار ندارند (مثل اینستاگرام و فیسبوک): تصویرها را دانلود کنید، کپشن را کپی کنید، در خود شبکه منتشر کنید، بعد لینک پست را اینجا بگذارید و ذخیره کنید.</p>
+      ${aut.length ? `<p class="help">خودکار: ${aut.map(esc).join('، ')}${w.autoPublish ? '' : ' (گزینهٔ «ارسال خودکار» در تب محتوا خاموش است)'}</p>` : ''}
+      ${att}
+      ${man.map(card).join('') || '<p class="help">همهٔ شبکه‌های این پست خودکارند، یا هنوز شبکه‌ای انتخاب نشده.</p>'}`;
+  };
+
   E.render = (full) => {
     const w = E.w, host = H.$('#editor'), idx = ST.findIndex(s => s.id === w.stage);
     const prev = H.$('.db', host), sc = prev ? prev.scrollTop : 0;
-    const tabs = [['main', 'محتوا'], ['cap', 'کپشن‌ها'], ['links', 'فایل و لینک'], ['res', 'نتیجه'], ['hist', 'تاریخچه']];
+    const tabs = [['main', 'محتوا'], ['cap', 'کپشن‌ها'], ['links', 'فایل و لینک'], ['pub', 'انتشار دستی'], ['res', 'نتیجه'], ['hist', 'تاریخچه']];
     host.innerHTML = `<div class="scrim" data-e="close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="ویرایش پست">
       <div class="dh"><h2>${E.isNew ? 'پست جدید' : esc(w.title || 'ویرایش پست')}</h2><button class="xb" data-e="close" aria-label="بستن">${ic('x', 18)}</button></div>
       <div class="steps">${ST.map((s, i) => `<button class="step ${i === idx ? 'on' : i < idx ? 'past' : ''}" data-stage="${s.id}">${i < idx ? ic('check', 13, 2.4) : ''}${s.name}</button>`).join('')}</div>
       <div class="dtabs" role="tablist">${tabs.map(([k, n]) => `<button class="dtab ${E.tab === k ? 'on' : ''}" role="tab" data-tab="${k}">${n}</button>`).join('')}</div>
       <div id="eerr" class="err hide" hidden style="margin:10px 22px 0"></div>
-      <div class="db">${({ main: tabMain, cap: tabCap, links: tabLinks, res: tabRes, hist: tabHist })[E.tab](w)}</div>
+      <div class="db">${({ main: tabMain, cap: tabCap, links: tabLinks, pub: tabPub, res: tabRes, hist: tabHist })[E.tab](w)}</div>
       <div class="df"><button class="btn p" data-e="save">${ic('check', 17, 2.2)} ذخیره</button>${!E.isNew ? `<button class="btn s" data-e="dup">${ic('copy', 16)} کپی پست</button><button class="btn d" data-e="del">${ic('trash', 16)} حذف</button>` : ''}<button class="btn g" data-e="close" style="margin-inline-start:auto">بستن</button></div></aside>`;
     const nb = H.$('.db', host); if (nb && !full) nb.scrollTop = sc;
     E.hydrate();
@@ -197,6 +214,7 @@
       const k = el.dataset.att, i = +el.dataset.i;
       if (k === 'pick') return H.$('#att-in').click();
       if (k === 'rm') { const a = w.attachments[i]; if (!a.pending) E.removed.push(a); else URL.revokeObjectURL(a.url); w.attachments.splice(i, 1); return E.render(); }
+      if (k === 'dlall') { for (const a of w.attachments.filter(H.isImg)) { try { const b = a.pending ? a.blob : await H.store.fileBlob(a.path), u = URL.createObjectURL(b), l = document.createElement('a'); l.href = u; l.download = a.name; l.click(); setTimeout(() => URL.revokeObjectURL(u), 3000); await new Promise(r => setTimeout(r, 400)); } catch (x) { err(x.message); } } return; }
       if (k === 'dl') { const a = w.attachments[i]; try { const b = a.pending ? a.blob : await H.store.fileBlob(a.path), u = URL.createObjectURL(b), l = document.createElement('a'); l.href = u; l.download = a.name; l.click(); setTimeout(() => URL.revokeObjectURL(u), 3000); } catch (x) { err(x.message); } return; }
     }
     if (el.dataset.pvall) { E.pvAll = !E.pvAll; E.updatePreview(); return; }
