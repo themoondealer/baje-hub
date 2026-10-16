@@ -2,9 +2,9 @@
 (function (H) {
   const { $, $$, esc, fa, ic, S, U } = Object.assign({}, H, { S: H.S, U: H.U });
   const app = H.app = {};
-  const NAV = [['dash', 'داشبورد', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['ideas', 'ایده‌ها', 'sparkle'], ['list', 'فهرست', 'list'], ['stats', 'آمار', 'chart'], ['settings', 'تنظیمات', 'settings']];
-  const TITLES = { dash: 'داشبورد', board: 'تخته محتوا', cal: 'تقویم انتشار', ideas: 'ایده‌ها و تقویم محتوا', list: 'فهرست پست‌ها', stats: 'آمار و نتیجه', settings: 'تنظیمات' };
-  const MOBILE = [['dash', 'خانه', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['ideas', 'ایده', 'sparkle'], ['settings', 'بیشتر', 'settings']];
+  const NAV = [['dash', 'داشبورد', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['queue', 'صف دستی', 'send'], ['ideas', 'ایده‌ها', 'sparkle'], ['list', 'فهرست', 'list'], ['stats', 'آمار', 'chart'], ['settings', 'تنظیمات', 'settings']];
+  const TITLES = { dash: 'داشبورد', board: 'تخته محتوا', cal: 'تقویم انتشار', queue: 'صف انتشار دستی', ideas: 'ایده‌ها و تقویم محتوا', list: 'فهرست پست‌ها', stats: 'آمار و نتیجه', settings: 'تنظیمات' };
+  const MOBILE = [['dash', 'خانه', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['queue', 'صف', 'send'], ['settings', 'بیشتر', 'settings']];
 
   const applyTheme = () => { const t = S.settings.theme; if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); };
   const setSync = (k, txt) => { const s = $('#sync'); if (!s) return; s.className = 'sync ' + k; s.innerHTML = `<i></i><span>${txt}</span>`; };
@@ -127,6 +127,12 @@
       const rows = [['تاریخ', 'ساعت', 'عنوان', 'ستون محتوا', 'قالب', 'ارزش', 'تلاش', 'پیشنهاد', 'تصمیم', 'یادداشت', 'نیاز به رئیس', 'ریسک', 'منبع']].concat(S.posts.filter(p => p.idea).sort((x, y) => (x.due || '9').localeCompare(y.due || '9')).map(p => [(p.due || '').slice(0, 10) ? H.fmtDay(p.due) : '', (p.due || '').slice(11, 16), p.title, p.idea.pillarName, (p.formats || []).join('، '), p.idea.value, p.idea.effort, DN[p.idea.rec] || '', DN[p.idea.decision] || '', p.idea.note, p.insurance ? 'بله' : '', p.idea.risk, p.idea.source]));
       const csv = '\ufeff' + rows.map(r => r.map(q).join(',')).join('\n'), b = new Blob([csv], { type: 'text/csv;charset=utf-8' }), l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = 'content-calendar-ideas.csv'; l.click(); setTimeout(() => URL.revokeObjectURL(l.href), 2000); return;
     }
+    if (a === 'qrange') { H.QUEUE.days = +el.dataset.n; return app.render(); }
+    if (a === 'qcopy' || a === 'qdl') {
+      const [id, ch, k] = el.dataset.k.split('|'), p = S.posts.find(x => x.id === id); if (!p) return;
+      if (a === 'qcopy') { await H.copyText(k === 'utm' ? H.utm(p, ch) : ((p.captions && p.captions[ch]) || p.caption || '')); return H.toast('کپی شد'); }
+      el.disabled = true; try { await H.dlFiles(H.chFiles(p, ch)); } catch (x) { H.toast(x.message, 4500, 'bad'); } el.disabled = false; return;
+    }
     if (a === 'go') return app.go(el.dataset.tab);
     if (a === 'stage') { U.f.stage = el.dataset.stage; U.mode = 'list'; return app.go('board', true); }
     if (a === 'new') return app.newPost();
@@ -164,6 +170,14 @@
   });
   document.addEventListener('change', async e => {
     const t = e.target; if (!S.mode || !t.dataset) return;
+    if (t.dataset.qurl) {
+      const [id, ch] = t.dataset.qurl.split('|'), p = S.posts.find(x => x.id === id), v = t.value.trim(); if (!p || (p.postUrls || {})[ch] === v || (!v && !(p.postUrls || {})[ch])) return;
+      const pu = { ...(p.postUrls || {}) }; if (v) pu[ch] = v; else delete pu[ch];
+      const np = { ...p, postUrls: pu, history: [...(p.history || []), `${new Date().toLocaleString('fa-IR')} — ${H.who() || 'ناشناس'}: لینک ${ch} ${v ? 'ثبت شد' : 'پاک شد'} (صف دستی)`] };
+      if (np.stage === 'ready' && np.channels.every(c => pu[c])) { np.stage = 'done'; np.history = [...np.history, `${new Date().toLocaleString('fa-IR')} — ${H.who() || 'ناشناس'}: آماده ← منتشرشده (لینک همهٔ شبکه‌ها ثبت شد)`]; }
+      try { await H.store.save(np); await app.load(true); H.toast('ذخیره شد ✓'); } catch (x) { H.toast(x.message, 4500, 'bad'); await app.load(true); }
+      return;
+    }
     if (t.dataset.ifl) { H.IDEA_FILTER[t.dataset.ifl] = t.value; return app.render(); }
     if (t.dataset.inote) { const p = S.posts.find(x => x.id === t.dataset.inote); if (!p || !p.idea || (p.idea.note || '') === t.value.trim()) return; const np = { ...p, idea: { ...p.idea, note: t.value.trim() } }; p.idea = np.idea; try { await H.store.save(np); await app.load(true); H.toast('یادداشت ذخیره شد'); } catch (x) { H.toast(x.message, 4500, 'bad'); await app.load(true); } }
   });

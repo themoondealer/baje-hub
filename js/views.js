@@ -49,6 +49,7 @@
     const upcoming = byDue(open.filter(p => p.due && H.diffDays(p.due, t) >= 0)).slice(0, 5);
     const attn = [];
     P.filter(late).forEach(p => attn.push({ p, k: 'w', t: 'از موعد گذشته: ' + H.relDay(p.due) }));
+    P.filter(p => (p.reviews || []).some(r => r.status === 'open')).forEach(p => attn.push({ p, k: 'w', t: boss ? 'منتظر اصلاح نظر شما' : 'رئیس نظر گذاشته؛ اصلاح لازم است' }));
     P.filter(p => p.stage === 'boss').forEach(p => attn.push({ p, k: 'a', t: boss ? 'منتظر تأیید شماست' : 'منتظر تأیید رئیس' }));
     P.filter(p => p.stage === 'ready' && !p.caption.trim()).forEach(p => attn.push({ p, k: 'w', t: 'آماده انتشار ولی کپشن ندارد' }));
     P.filter(p => !p.due && p.stage !== 'done').forEach(p => attn.push({ p, k: 'a', t: 'تاریخ انتشار ندارد' }));
@@ -216,5 +217,50 @@
       <div style="margin-top:12px"><button class="btn p sm" data-act="savetpl">ذخیرهٔ قالب</button></div></div>
     <div class="panel"><h3>${ic('moon', 18)}ظاهر</h3><div class="seg" style="margin:0"><button class="${set.theme === 'auto' ? 'on' : ''}" data-act="theme" data-t="auto">خودکار</button><button class="${set.theme === 'light' ? 'on' : ''}" data-act="theme" data-t="light">روشن</button><button class="${set.theme === 'dark' ? 'on' : ''}" data-act="theme" data-t="dark">تیره</button></div></div>
     <div class="panel"><h3>${ic('download', 18)}پشتیبان</h3><p>همهٔ پست‌ها را یک‌جا دانلود کنید.</p><button class="btn s sm" data-act="export">دانلود پشتیبان JSON</button></div></div>`;
+  };
+
+  /* ---------- صف دستی: اینستاگرام و فیسبوک (بدون ارسال خودکار) ---------- */
+  const MANUAL = ['اینستاگرام', 'فیسبوک'];
+  H.QUEUE = H.QUEUE || { days: 7 };
+  /* نام فایل‌های هر شبکه، به همان ترتیبی که در پست تعیین شده؛ بدون تعیین، همهٔ تصویرها */
+  H.chFiles = (p, ch) => {
+    const all = (p.attachments || []).filter(H.isImg), sel = p.channelFiles && p.channelFiles[ch];
+    return Array.isArray(sel) ? sel.map(n => all.find(a => a.name === n)).filter(Boolean) : all;
+  };
+  H.dlFiles = async files => {
+    for (const a of files) {
+      const b = a.pending ? a.blob : await H.store.fileBlob(a.path), u = URL.createObjectURL(b), l = document.createElement('a');
+      l.href = u; l.download = a.name; l.click(); setTimeout(() => URL.revokeObjectURL(u), 3000); await new Promise(r => setTimeout(r, 450));
+    }
+  };
+  H.copyText = async txt => {
+    try { await navigator.clipboard.writeText(txt); } catch (x) { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  };
+  H.queueItems = () => {
+    const t = today(), lim = H.QUEUE.days, out = [];
+    S.posts.filter(p => p.stage !== 'idea' && p.due).forEach(p => {
+      const d = H.diffDays(p.due, t);
+      if (d >= lim || d < -2) return;
+      MANUAL.filter(c => p.channels.includes(c)).forEach(c => { const posted = !!(p.postUrls || {})[c]; if (!posted || d >= 0) out.push({ p, c, d, posted }); });
+    });
+    return out.sort((x, y) => x.p.due.localeCompare(y.p.due) || MANUAL.indexOf(x.c) - MANUAL.indexOf(y.c));
+  };
+  V.queue = () => {
+    const items = H.queueItems(), pending = items.filter(i => !i.posted).length, days = {};
+    items.forEach(i => (days[i.p.due.slice(0, 10)] = days[i.p.due.slice(0, 10)] || []).push(i));
+    const stageNote = p => p.stage === 'boss' || (p.insurance && !p.legalApproved) ? '<span class="pill w">' + ic('shield', 12) + 'هنوز تأیید رئیس نگرفته؛ نگذارید</span>' : p.stage === 'ready' || p.stage === 'done' ? '<span class="pill o">' + ic('check', 12) + 'آمادهٔ انتشار</span>' : '<span class="pill">' + esc(H.stage(p.stage).name) + '</span>';
+    const item = ({ p, c, d, posted }) => {
+      const files = H.chFiles(p, c), cap = (p.captions && p.captions[c]) || p.caption || '', link = c === 'اینستاگرام' ? '' : H.utm(p, c), key = esc(p.id) + '|' + esc(c);
+      return `<div class="qi ${posted ? 'posted' : ''}"><div class="qh"><b>${esc(c)}</b><span class="qt">${ic('clock', 13)} ${esc((p.due || '').slice(11, 16) ? H.fa(p.due.slice(11, 16)) : '')}${d < 0 ? ' · <span class="late">گذشته</span>' : ''}</span>${stageNote(p)}
+        <button class="btn s sm" data-act="open" data-id="${esc(p.id)}">${esc(p.title || 'بدون عنوان')}</button></div>
+        <div class="qb"><div class="qc"><textarea class="in" readonly>${esc(cap)}</textarea>
+          <div class="qa"><button class="btn s sm" data-act="qcopy" data-k="${key}|cap">${ic('copy', 14)} کپی کپشن</button>${link ? `<button class="btn s sm" data-act="qcopy" data-k="${key}|utm">${ic('copy', 14)} کپی لینک</button>` : '<span class="help">لینک را در بایو بگذارید؛ در کپشن لینک کلیک‌پذیر نیست.</span>'}
+          <button class="btn s sm" data-act="qdl" data-k="${key}" ${files.length ? '' : 'disabled'}>${ic('download', 14)} دانلود ${files.length ? fa(files.length) + ' تصویر' : '(تصویری نیست)'}</button></div></div>
+        <div class="qu"><label class="f" style="margin-top:0">لینک پست بعد از انتشار ${posted ? '✓' : ''}</label><input class="in" dir="ltr" data-qurl="${key}" value="${esc((p.postUrls || {})[c] || '')}" placeholder="https://..."></div></div></div>`;
+    };
+    const ds = Object.keys(days).sort();
+    return `<div class="qtop"><div><h2 style="font-size:20px;font-weight:900">صف انتشار دستی</h2><p class="sub">${fa(pending)} پست اینستاگرام/فیسبوک در ${fa(H.QUEUE.days)} روز آینده. همه را یک‌جا در Meta Business Suite زمان‌بندی کنید.</p></div>
+      <div class="seg" style="margin:0">${[3, 7, 14].map(n => `<button class="${H.QUEUE.days === n ? 'on' : ''}" data-act="qrange" data-n="${n}">${fa(n)} روز</button>`).join('')}</div></div>
+      ${ds.length ? ds.map(d => `<h3 class="qd">${H.relDay(d) ? esc(H.relDay(d)) + ' · ' : ''}${esc(H.fmtDay(d))}</h3>${days[d].map(item).join('')}`).join('') : H.empty('send', 'پست دستی در این بازه نیست.', '')}`;
   };
 })(window.H);

@@ -128,6 +128,19 @@
       <div class="mg" style="margin-top:10px">${H.METRICS.map(x => `<div><label>${x.n}</label><input class="in" inputmode="numeric" data-met="${esc(c)}|${x.k}" value="${m[x.k] === undefined || m[x.k] === null ? '' : esc(fa(m[x.k]))}"></div>`).join('')}</div></div>`; }).join('') || '<p class="help">شبکه‌ای انتخاب نشده.</p>'}`;
   const tabHist = w => `<ul class="hist" style="padding:0;margin-top:10px">${(w.history || []).slice().reverse().map(h => `<li>${esc(h)}</li>`).join('') || '<li>هنوز تغییر مرحله‌ای ثبت نشده.</li>'}</ul>`;
 
+
+  /* نظر رئیس: رئیس دستور اصلاح می‌نویسد؛ اصلاح (خودکار با Claude یا دستی) آن را done می‌کند و پست دوباره برای تأیید می‌آید */
+  const tabRev = w => {
+    const rs = (w.reviews || []).slice().reverse(), boss = H.isBoss(), openN = rs.filter(r => r.status === 'open').length;
+    const chip = r => r.status === 'open' ? '<span class="pill w">منتظر اصلاح</span>' : '<span class="pill o">اصلاح شد</span>';
+    return `<p class="help" style="margin-top:12px">${boss ? 'اگر متن یا تاریخ درست نیست، همین‌جا بنویسید چه چیزی چطور عوض شود. پست به پیش‌نویس برمی‌گردد، اصلاح می‌شود و دوباره برای تأیید شما می‌آید.' : 'نظر رئیس اینجا می‌آید. اگر اصلاح خودکار فعال باشد Claude متن را اصلاح می‌کند و پست دوباره برای رئیس می‌رود.'}</p>
+      ${boss ? `<label class="f">نظر یا دستور اصلاح</label><textarea class="in" id="rv-text" placeholder="مثلاً: در کپشن تلگرام جملهٔ دوم را کوتاه‌تر کن و تاریخ را با ماه بنویس" style="min-height:110px"></textarea>
+        <div class="cr"><button class="btn p" data-e="reqchg">${ic('send', 16)} ارسال برای اصلاح</button></div>` : ''}
+      ${!boss && openN ? `<label class="f">پاسخ شما (اختیاری)</label><textarea class="in" id="rv-reply" placeholder="چه چیزی را عوض کردید؟" style="min-height:70px"></textarea>
+        <div class="cr"><button class="btn s" data-e="rvdone">${ic('check', 16)} خودم اصلاح کردم؛ دوباره برای رئیس بفرست</button></div>` : ''}
+      ${rs.map(r => `<div class="chm"><div class="cr"><b>${esc(r.by || 'رئیس')} <small class="sub">${esc(r.at || '')}</small></b>${chip(r)}</div><p style="white-space:pre-wrap;margin:8px 0">${esc(r.text)}</p>${r.reply ? `<p class="help"><b>${esc(r.doneBy || 'پاسخ')}:</b> ${esc(r.reply)}</p>` : ''}</div>`).join('') || '<p class="help">هنوز نظری ثبت نشده.</p>'}`;
+  };
+
   /* شبکه‌هایی که انتشارشان خودکار است؛ بقیه با «بستهٔ انتشار» دستی منتشر می‌شوند */
   const AUTO = ['تلگرام', 'بله', 'روبیکا', 'ایتا', 'لینکدین'];
   const tabPub = w => {
@@ -148,13 +161,13 @@
   E.render = (full) => {
     const w = E.w, host = H.$('#editor'), idx = ST.findIndex(s => s.id === w.stage);
     const prev = H.$('.db', host), sc = prev ? prev.scrollTop : 0;
-    const tabs = [['main', 'محتوا'], ['cap', 'کپشن‌ها'], ['links', 'فایل و لینک'], ['pub', 'انتشار دستی'], ['res', 'نتیجه'], ['hist', 'تاریخچه']];
+    const tabs = [['main', 'محتوا'], ['cap', 'کپشن‌ها'], ['links', 'فایل و لینک'], ['pub', 'انتشار دستی'], ['rev', 'نظر رئیس'], ['res', 'نتیجه'], ['hist', 'تاریخچه']];
     host.innerHTML = `<div class="scrim" data-e="close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="ویرایش پست">
       <div class="dh"><h2>${E.isNew ? 'پست جدید' : esc(w.title || 'ویرایش پست')}</h2><button class="xb" data-e="close" aria-label="بستن">${ic('x', 18)}</button></div>
       <div class="steps">${ST.map((s, i) => `<button class="step ${i === idx ? 'on' : i < idx ? 'past' : ''}" data-stage="${s.id}">${i < idx ? ic('check', 13, 2.4) : ''}${s.name}</button>`).join('')}</div>
-      <div class="dtabs" role="tablist">${tabs.map(([k, n]) => `<button class="dtab ${E.tab === k ? 'on' : ''}" role="tab" data-tab="${k}">${n}</button>`).join('')}</div>
+      <div class="dtabs" role="tablist">${tabs.map(([k, n]) => `<button class="dtab ${E.tab === k ? 'on' : ''}" role="tab" data-tab="${k}">${n}${k === 'rev' && (w.reviews || []).some(r => r.status === 'open') ? ' <span class="pill w">باز</span>' : ''}</button>`).join('')}</div>
       <div id="eerr" class="err hide" hidden style="margin:10px 22px 0"></div>
-      <div class="db">${({ main: tabMain, cap: tabCap, links: tabLinks, pub: tabPub, res: tabRes, hist: tabHist })[E.tab](w)}</div>
+      <div class="db">${({ main: tabMain, cap: tabCap, links: tabLinks, pub: tabPub, rev: tabRev, res: tabRes, hist: tabHist })[E.tab](w)}</div>
       <div class="df"><button class="btn p" data-e="save">${ic('check', 17, 2.2)} ذخیره</button>${!E.isNew ? `<button class="btn s" data-e="dup">${ic('copy', 16)} کپی پست</button><button class="btn d" data-e="del">${ic('trash', 16)} حذف</button>` : ''}<button class="btn g" data-e="close" style="margin-inline-start:auto">بستن</button></div></aside>`;
     const nb = H.$('.db', host); if (nb && !full) nb.scrollTop = sc;
     E.hydrate();
@@ -231,6 +244,21 @@
     }
     const a = el.dataset.e;
     if (a === 'close') return E.close();
+    if (a === 'reqchg' || a === 'rvdone') {
+      const stamp = `${new Date().toLocaleString('fa-IR')} — ${H.who() || 'ناشناس'}`;
+      if (a === 'reqchg') {
+        const txt = ((H.$('#rv-text') || {}).value || '').trim(); if (!txt) return err('نظر را بنویسید');
+        w.reviews = [...(w.reviews || []), { id: 'r' + Date.now().toString(36), by: H.who() || 'رئیس', at: new Date().toLocaleString('fa-IR'), text: txt, status: 'open' }];
+        w.legalApproved = false; if (['review', 'boss', 'ready'].includes(w.stage)) w.stage = 'draft';
+        w.history = [...(w.history || []), stamp + ': رئیس نظر گذاشت و پست برای اصلاح برگشت'];
+      } else {
+        const rp = ((H.$('#rv-reply') || {}).value || '').trim() || 'اصلاح شد.';
+        w.reviews = (w.reviews || []).map(r => r.status === 'open' ? { ...r, status: 'done', reply: rp, doneBy: H.who() || 'ادمین', doneAt: new Date().toISOString() } : r);
+        w.legalApproved = false; w.stage = 'boss';
+        w.history = [...(w.history || []), stamp + ': اصلاح انجام شد؛ منتظر تأیید رئیس'];
+      }
+      const sv = H.$('[data-e=save]'); if (sv) sv.click(); return;
+    }
     if (a === 'save') { const sb = el; sb.disabled = true; try { const out = E.collect(), toDone = out.stage === 'done' && E.orig.stage !== 'done'; if (E.w.attachments.some(x => x.pending) || E.removed.length) { sb.textContent = 'در حال آپلود فایل…'; } out.attachments = await E.flush(); await H.app.saveFrom(out); E.close(); if (toDone) H.confetti(); } catch (x) { if (x.conflict) E.close(); else { err(x.message); sb.disabled = false; } } }
     if (a === 'dup') { try { const c = E.collect(); c.id = H.newId(); c.slug = ''; c.title += ' (کپی)'; c.stage = 'idea'; c.legalApproved = false; c.autoPublish = false; c.history = []; c.metrics = {}; c.postUrls = {}; c.attachments = []; delete c._sha; E.open(c, true); } catch (x) { err(x.message); } }
     if (a === 'del') { if (confirm('این پست حذف شود؟')) { try { await H.app.remove(E.orig); E.close(); } catch (x) { err(x.message); } } }

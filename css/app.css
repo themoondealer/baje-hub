@@ -1,6 +1,15 @@
 @font-face{font-family:V;src:url(../fonts/Vazirmatn.woff2) format('woff2');font-weight:100 900;font-display:swap}
 :root{color-scheme:light;--brand:#2F4FE0;--dark:#1B2E9E;--glow:#7F95FF;--tint:#EEF1FD;--bt:#2F4FE0;--bg:#F4F6FB;--surface:#fff;--surface2:#F4F6FB;--ink:#0E1020;--muted:#6B7393;--line:#E4E8F6;--warn:#FF4D5E;--warn-bg:#FFE9EC;--ok:#1FA971;--ok-bg:#E5F7EF;--amber:#E8A100;--amber-bg:#FFF4D6;--sh:0 14px 36px -18px rgba(16,24,64,.28);--sh2:0 24px 60px -20px rgba(16,24,64,.35);--s1:#2F4FE0;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--grid:#E4E8F6;--r:22px}
 :root[data-theme=dark]{color-scheme:dark;--bt:#9DB0FF;--tint:#1E2550;--bg:#0C0E1B;--surface:#151830;--surface2:#0F1124;--ink:#F2F4FF;--muted:#9AA3C9;--line:#262B52;--warn-bg:#3A1620;--ok-bg:#10301F;--amber-bg:#352A0B;--sh:0 14px 36px -18px rgba(0,0,0,.6);--sh2:0 24px 60px -20px rgba(0,0,0,.7);--s1:#5A78FF;--s2:#d95926;--s3:#199e70;--s4:#c98500;--grid:#262B52;--glow:#7F95FF}
+/* صف دستی */
+.qtop{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.qd{font-size:15px;font-weight:900;margin:22px 0 10px;color:var(--bt)}
+.qi{background:var(--surface);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:12px}
+.qi.posted{opacity:.6}
+.qh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.qh b{font-size:16px;font-weight:900}.qt{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted)}
+.qb{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}.qc textarea{min-height:150px}
+.qa{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+@media(max-width:760px){.qb{grid-template-columns:1fr}}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bt:#9DB0FF;--tint:#1E2550;--bg:#0C0E1B;--surface:#151830;--surface2:#0F1124;--ink:#F2F4FF;--muted:#9AA3C9;--line:#262B52;--warn-bg:#3A1620;--ok-bg:#10301F;--amber-bg:#352A0B;--sh:0 14px 36px -18px rgba(0,0,0,.6);--sh2:0 24px 60px -20px rgba(0,0,0,.7);--s1:#5A78FF;--s2:#d95926;--s3:#199e70;--s4:#c98500;--grid:#262B52}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
