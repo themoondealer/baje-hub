@@ -2,9 +2,9 @@
 (function (H) {
   const { $, $$, esc, fa, ic, S, U } = Object.assign({}, H, { S: H.S, U: H.U });
   const app = H.app = {};
-  const NAV = [['dash', 'داشبورد', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['queue', 'صف دستی', 'send'], ['ideas', 'ایده‌ها', 'sparkle'], ['list', 'فهرست', 'list'], ['stats', 'آمار', 'chart'], ['settings', 'تنظیمات', 'settings']];
-  const TITLES = { dash: 'داشبورد', board: 'تخته محتوا', cal: 'تقویم انتشار', queue: 'صف انتشار دستی', ideas: 'ایده‌ها و تقویم محتوا', list: 'فهرست پست‌ها', stats: 'آمار و نتیجه', settings: 'تنظیمات' };
-  const MOBILE = [['dash', 'خانه', 'home'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['queue', 'صف', 'send'], ['settings', 'بیشتر', 'settings']];
+  const NAV = [['dash', 'داشبورد', 'home'], ['prog', 'پیشرفت شبکه‌ها', 'trend'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['queue', 'صف دستی', 'send'], ['ideas', 'ایده‌ها', 'sparkle'], ['list', 'فهرست', 'list'], ['stats', 'آمار', 'chart'], ['settings', 'تنظیمات', 'settings']];
+  const TITLES = { dash: 'داشبورد', prog: 'پیشرفت شبکه‌ها', board: 'تخته محتوا', cal: 'تقویم انتشار', queue: 'صف انتشار دستی', ideas: 'ایده‌ها و تقویم محتوا', list: 'فهرست پست‌ها', stats: 'آمار و نتیجه', settings: 'تنظیمات' };
+  const MOBILE = [['dash', 'خانه', 'home'], ['prog', 'پیشرفت', 'trend'], ['board', 'تخته', 'board'], ['queue', 'صف', 'send'], ['settings', 'بیشتر', 'settings']];
 
   const applyTheme = () => { const t = S.settings.theme; if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); };
   const setSync = (k, txt) => { const s = $('#sync'); if (!s) return; s.className = 'sync ' + k; s.innerHTML = `<i></i><span>${txt}</span>`; };

@@ -263,4 +263,29 @@
       <div class="seg" style="margin:0">${[3, 7, 14].map(n => `<button class="${H.QUEUE.days === n ? 'on' : ''}" data-act="qrange" data-n="${n}">${fa(n)} روز</button>`).join('')}</div></div>
       ${ds.length ? ds.map(d => `<h3 class="qd">${H.relDay(d) ? esc(H.relDay(d)) + ' · ' : ''}${esc(H.fmtDay(d))}</h3>${days[d].map(item).join('')}`).join('') : H.empty('send', 'پست دستی در این بازه نیست.', '')}`;
   };
+  /* ---------- پیشرفت شبکه‌ها: کدام شبکه جلو و کدام عقب است ---------- */
+  V.prog = () => {
+    const P = S.posts, sent = (p, c) => !!(p.postUrls || {})[c], MAN = ['اینستاگرام', 'فیسبوک'];
+    const pubd = p => p.stage === 'done' || Object.keys(p.postUrls || {}).length > 0;
+    const pub = byDue(P.filter(pubd)).reverse();
+    const used = H.CHANNELS.filter(c => P.some(p => p.stage !== 'idea' && (p.channels || []).includes(c.n)));
+    const st = used.map(c => {
+      const plan = pub.filter(p => (p.channels || []).includes(c.n)), ok = plan.filter(p => sent(p, c.n));
+      return { c: c.n, total: plan.length, ok: ok.length, miss: plan.filter(p => !sent(p, c.n)), pct: plan.length ? Math.round(ok.length / plan.length * 100) : 0 };
+    }).filter(x => x.total).sort((a, b) => b.pct - a.pct || b.ok - a.ok);
+    const lvl = x => x.pct >= 90 ? ['ok', 'جلو'] : x.pct >= 50 ? ['mid', 'وسط'] : ['bad', 'عقب'];
+    const boss = P.filter(p => p.stage === 'boss'), bossLate = boss.filter(p => p.due && H.diffDays(p.due, today()) < 0);
+    const ready = P.filter(p => p.stage === 'ready' && !pubd(p)), ideas = P.filter(p => p.stage === 'idea');
+    const kpi = (n, l, cls) => `<div class="kpi ${cls || ''}"><span class="l">${l}</span><span class="v">${fa(n)}</span></div>`;
+    const bars = st.map(x => { const [k, n] = lvl(x); return `<div class="pgr"><span class="pgn">${esc(x.c)}${MAN.includes(x.c) ? ' <small>(دستی)</small>' : ''}</span><span class="pgb"><i class="${k}" style="width:${x.pct}%"></i></span><span class="pgv">${fa(x.ok)} از ${fa(x.total)}</span><span class="pill pg-${k}">${n}</span></div>`; }).join('');
+    const behind = st.filter(x => x.miss.length).map(x => `<div class="pgm"><b>${esc(x.c)} — ${fa(x.miss.length)} پست مانده</b><div>${x.miss.slice(0, 6).map(p => `<button class="btn s sm" data-act="open" data-id="${esc(p.id)}">${esc(p.title || 'بدون عنوان')}</button>`).join('')}${x.miss.length > 6 ? `<small class="sub"> و ${fa(x.miss.length - 6)} مورد دیگر</small>` : ''}</div>${MAN.includes(x.c) ? '<button class="btn p sm" data-act="go" data-tab="queue">باز کردن صف دستی</button>' : ''}</div>`).join('');
+    const cols = used.filter(c => st.some(x => x.c === c.n)).map(c => c.n);
+    const cell = (p, c) => !(p.channels || []).includes(c) ? '<td class="mx-na">—</td>' : sent(p, c) ? `<td class="mx-ok">${/^https?:/.test(p.postUrls[c]) ? `<a href="${esc(p.postUrls[c])}" target="_blank" rel="noopener" title="باز کردن پست">✓</a>` : '✓'}</td>` : '<td class="mx-no">○</td>';
+    const matrix = pub.length ? `<div class="mxw"><table class="mx"><thead><tr><th>پست</th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${pub.map(p => `<tr><td><button class="lnk" data-act="open" data-id="${esc(p.id)}">${esc(p.title || 'بدون عنوان')}</button><small>${esc(H.fmtDue(p.due))}</small></td>${cols.map(c => cell(p, c)).join('')}</tr>`).join('')}</tbody></table></div><p class="help">✓ منتشر شده (با لینک) · ○ برنامه‌ریزی شده ولی هنوز نرفته · — برای این شبکه نیست</p>` : H.empty('send', 'هنوز پستی منتشر نشده.', '');
+    return `<div class="kpis">${kpi(pub.length, 'پست منتشرشده')}${kpi(ready.length, 'آمادهٔ انتشار، هنوز نرفته')}${kpi(boss.length, 'منتظر تأیید رئیس', bossLate.length ? 'warnk' : '')}${kpi(ideas.length, 'ایده')}</div>
+      ${bossLate.length ? `<div class="note warn">${ic('alert', 16)} ${fa(bossLate.length)} پست منتظر رئیس تاریخش گذشته. بعد از تأیید رئیس همان لحظه در شبکه‌ها می‌روند؛ پیش از تأیید، تاریخ‌ها را از هم باز کنید.</div>` : ''}
+      <div class="panel"><h3>${ic('trend', 18)}کدام شبکه جلو است؟</h3>${bars || '<p class="sub">داده‌ای نیست.</p>'}</div>
+      ${behind ? `<div class="panel"><h3>${ic('alert', 18)}چه چیزی عقب است؟</h3>${behind}</div>` : ''}
+      <div class="panel"><h3>${ic('table', 18)}هر پست روی کدام شبکه رفته؟</h3>${matrix}</div>`;
+  };
 })(window.H);
