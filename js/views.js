@@ -282,10 +282,41 @@
     const cols = used.filter(c => st.some(x => x.c === c.n)).map(c => c.n);
     const cell = (p, c) => !(p.channels || []).includes(c) ? '<td class="mx-na">—</td>' : sent(p, c) ? `<td class="mx-ok">${/^https?:/.test(p.postUrls[c]) ? `<a href="${esc(p.postUrls[c])}" target="_blank" rel="noopener" title="باز کردن پست">✓</a>` : '✓'}</td>` : '<td class="mx-no">○</td>';
     const matrix = pub.length ? `<div class="mxw"><table class="mx"><thead><tr><th>پست</th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${pub.map(p => `<tr><td><button class="lnk" data-act="open" data-id="${esc(p.id)}">${esc(p.title || 'بدون عنوان')}</button><small>${esc(H.fmtDue(p.due))}</small></td>${cols.map(c => cell(p, c)).join('')}</tr>`).join('')}</tbody></table></div><p class="help">✓ منتشر شده (با لینک) · ○ برنامه‌ریزی شده ولی هنوز نرفته · — برای این شبکه نیست</p>` : H.empty('send', 'هنوز پستی منتشر نشده.', '');
-    return `<div class="kpis">${kpi(pub.length, 'پست منتشرشده')}${kpi(ready.length, 'آمادهٔ انتشار، هنوز نرفته')}${kpi(boss.length, 'منتظر تأیید رئیس', bossLate.length ? 'warnk' : '')}${kpi(ideas.length, 'ایده')}</div>
+    return `<button class="btn p sm" style="margin-bottom:14px" data-act="go" data-tab="goal">${ic('sparkle', 16)} مسیر یک میلیون بازدید</button><div class="kpis">${kpi(pub.length, 'پست منتشرشده')}${kpi(ready.length, 'آمادهٔ انتشار، هنوز نرفته')}${kpi(boss.length, 'منتظر تأیید رئیس', bossLate.length ? 'warnk' : '')}${kpi(ideas.length, 'ایده')}</div>
       ${bossLate.length ? `<div class="note warn">${ic('alert', 16)} ${fa(bossLate.length)} پست منتظر رئیس تاریخش گذشته. بعد از تأیید رئیس همان لحظه در شبکه‌ها می‌روند؛ پیش از تأیید، تاریخ‌ها را از هم باز کنید.</div>` : ''}
       <div class="panel"><h3>${ic('trend', 18)}کدام شبکه جلو است؟</h3>${bars || '<p class="sub">داده‌ای نیست.</p>'}</div>
       ${behind ? `<div class="panel"><h3>${ic('alert', 18)}چه چیزی عقب است؟</h3>${behind}</div>` : ''}
       <div class="panel"><h3>${ic('table', 18)}هر پست روی کدام شبکه رفته؟</h3>${matrix}</div>`;
+  };
+  /* ---------- مسیر یک میلیون بازدید ---------- */
+  const GOAL = 1000000, STEPS = [100, 1000, 10000, 100000, 1000000];
+  const nf = n => Number(n).toLocaleString('fa-IR', { maximumFractionDigits: 1 });
+  V.goal = () => {
+    const P = S.posts, withV = P.filter(p => H.sumMetric(p, 'views') !== null);
+    const total = withV.reduce((a, p) => a + H.sumMetric(p, 'views'), 0);
+    const sum = k => withV.reduce((a, p) => a + (H.sumMetric(p, k) || 0), 0);
+    const reach = sum('reach'), likes = sum('likes'), saves = sum('saves'), shares = sum('shares'), comments = sum('comments');
+    const first = withV.map(p => p.due).filter(Boolean).sort()[0], days = first ? Math.max(1, H.diffDays(today(), first)) : 1;
+    const perDay = total / days, pct = total / GOAL * 100;
+    const next = STEPS.find(x => x > total) || GOAL, left = next - total;
+    const fol = ((S.acc || {}).instagram || {}).followers;
+    const need90 = GOAL / 90, mult = perDay > 0 ? need90 / perDay : null;
+    const R = 62, C = 2 * Math.PI * R, off = C * (1 - Math.min(1, Math.max(pct / 100, 0.004)));
+    const tips = [];
+    if (total && saves + shares === 0) tips.push(['ذخیره و اشتراک‌گذاری صفر است', 'اینستاگرام «ذخیره» و «ارسال برای دیگران» را از لایک مهم‌تر می‌داند. در هر کاروسل یک دلیل روشن برای ذخیره بگذارید (جدول، چک‌لیست، تاریخ مهلت) و در اسلاید آخر صریح بخواهید: «برای همکار حسابدارتان بفرستید».']);
+    if (fol && reach && reach / withV.length <= fol * 1.2) tips.push(['تقریباً فقط دنبال‌کننده‌ها می‌بینند', `میانگین دسترسی هر پست ${nf(reach / withV.length)} نفر و دنبال‌کننده‌ها ${nf(fol)} نفرند؛ یعنی پست به آدم‌های تازه نمی‌رسد. رشد واقعی از ریلز، هشتگ‌های هدفمند، پست مشترک (Collab) با حسابدارها و مشاوران، و یک تبلیغ کوچک روی بهترین پست می‌آید.`]);
+    if (total && likes / Math.max(reach, 1) > 0.5) tips.push(['کیفیت خوب، توزیع کم', 'نسبت لایک به دسترسی بالاست: هر که دیده پسندیده. مشکل کیفیت نیست؛ تعداد دیده‌شدن است. همین قالب را در ریلز کوتاه (۱۵ تا ۲۵ ثانیه) هم بسازید.']);
+    if (!withV.some(p => Object.keys(p.metrics || {}).some(c => c !== 'اینستاگرام'))) tips.push(['آمار شبکه‌های دیگر ثبت نشده', 'تلگرام، بله، روبیکا و ایتا بازدید را از ربات نمی‌دهند؛ هر چند روز عدد را در برگهٔ «نتیجه» پست وارد کنید تا اینجا جمع شود.']);
+    const top = [...withV].map(p => ({ p, v: H.sumMetric(p, 'views') })).sort((a, b) => b.v - a.v);
+    const mx = Math.max(...top.map(x => x.v), 1);
+    const ladder = STEPS.map(x => `<div class="gm ${total >= x ? 'on' : x === next ? 'nx' : ''}"><b>${nf(x)}</b><small>${total >= x ? 'رسیدیم ✓' : x === next ? 'قدم بعد' : ''}</small></div>`).join('');
+    const kp = (v, l) => `<div class="kpi"><span class="l">${l}</span><span class="v">${nf(v)}</span></div>`;
+    return `<div class="gh"><div class="gring"><svg viewBox="0 0 150 150" width="190" height="190"><circle cx="75" cy="75" r="${R}" class="gb"/><circle cx="75" cy="75" r="${R}" class="gf" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 75 75)"/></svg><div class="gc"><b data-count="${total}">${nf(total)}</b><small>از ${nf(GOAL)} بازدید</small></div></div>
+      <div class="gt"><h2>هدف: یک میلیون بازدید</h2><p>${pct < 1 ? Number(pct).toLocaleString('fa-IR', { maximumFractionDigits: 3 }) : nf(pct)}٪ راه رفته‌ایم؛ تا قدم بعدی (${nf(next)}) ${nf(left)} بازدید مانده. سرعت فعلی ${nf(perDay)} بازدید در روز است${mult && mult > 1 ? ` و برای رسیدن به یک میلیون در ۹۰ روز باید حدود <b>${nf(Math.round(mult))} برابر</b> شود.` : '.'}</p>
+      <div class="gl">${ladder}</div></div></div>
+      <div class="kpis">${kp(reach, 'نفر دیده‌اند (دسترسی)')}${kp(likes, 'لایک')}${kp(saves + shares, 'ذخیره و اشتراک')}${kp(fol || 0, 'دنبال‌کنندهٔ اینستاگرام')}</div>
+      <div class="panel"><h3>${ic('trend', 18)}چه چیزی بازدید را بالا می‌برد؟</h3>${tips.length ? tips.map(([t, d]) => `<div class="gtip"><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('') : '<p class="sub">هنوز داده‌ی کافی برای پیشنهاد نیست.</p>'}</div>
+      <div class="panel"><h3>${ic('chart', 18)}پرمخاطب‌ترین پست‌ها</h3>${top.length ? top.map(({ p, v }) => `<button class="gr" data-act="open" data-id="${esc(p.id)}"><span class="gn">${esc(p.title || 'بدون عنوان')}</span><span class="pgb"><i style="width:${Math.max(3, v / mx * 100)}%"></i></span><span class="pgv">${nf(v)}</span></button>`).join('') : H.empty('chart', 'هنوز آماری ثبت نشده.', '')}</div>
+      <p class="help" style="margin-top:12px">آمار اینستاگرام تا ${esc(((S.acc || {}).instagram || {}).updated || '—')} است. بازدید همهٔ شبکه‌ها با هم جمع می‌شود؛ عدد هر پست را در برگهٔ «نتیجه» همان پست هم می‌توانید وارد کنید.</p>`;
   };
 })(window.H);

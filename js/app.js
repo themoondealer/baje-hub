@@ -2,8 +2,8 @@
 (function (H) {
   const { $, $$, esc, fa, ic, S, U } = Object.assign({}, H, { S: H.S, U: H.U });
   const app = H.app = {};
-  const NAV = [['dash', 'داشبورد', 'home'], ['prog', 'پیشرفت شبکه‌ها', 'trend'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['queue', 'صف دستی', 'send'], ['ideas', 'ایده‌ها', 'sparkle'], ['list', 'فهرست', 'list'], ['stats', 'آمار', 'chart'], ['settings', 'تنظیمات', 'settings']];
-  const TITLES = { dash: 'داشبورد', prog: 'پیشرفت شبکه‌ها', board: 'تخته محتوا', cal: 'تقویم انتشار', queue: 'صف انتشار دستی', ideas: 'ایده‌ها و تقویم محتوا', list: 'فهرست پست‌ها', stats: 'آمار و نتیجه', settings: 'تنظیمات' };
+  const NAV = [['dash', 'داشبورد', 'home'], ['prog', 'پیشرفت شبکه‌ها', 'trend'], ['goal', 'مسیر ۱ میلیون', 'sparkle'], ['board', 'تخته', 'board'], ['cal', 'تقویم', 'cal'], ['queue', 'صف دستی', 'send'], ['ideas', 'ایده‌ها', 'sparkle'], ['list', 'فهرست', 'list'], ['stats', 'آمار', 'chart'], ['settings', 'تنظیمات', 'settings']];
+  const TITLES = { dash: 'داشبورد', prog: 'پیشرفت شبکه‌ها', goal: 'مسیر یک میلیون بازدید', board: 'تخته محتوا', cal: 'تقویم انتشار', queue: 'صف انتشار دستی', ideas: 'ایده‌ها و تقویم محتوا', list: 'فهرست پست‌ها', stats: 'آمار و نتیجه', settings: 'تنظیمات' };
   const MOBILE = [['dash', 'خانه', 'home'], ['prog', 'پیشرفت', 'trend'], ['board', 'تخته', 'board'], ['queue', 'صف', 'send'], ['settings', 'بیشتر', 'settings']];
 
   const applyTheme = () => { const t = S.settings.theme; if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); };
@@ -64,7 +64,7 @@
   app.logout = () => { localStorage.removeItem('baje-hub-auth'); S.mode = null; S.posts = []; $('#shell').hidden = true; $('#login').hidden = false; };
   app.enterGithub = async (token, repo, name, role, pin, savedHash, manual) => {
     S.mode = 'github'; S.token = token; S.repo = repo; S.user = await H.ghUser(); S.display = (name || '').trim();
-    S.tpl = await H.store.templates(); S.cfg = await H.store.config(); S.pinCfg = S.cfg.bossPin || null; S.role = 'admin'; let pinHash = '';
+    S.tpl = await H.store.templates(); S.cfg = await H.store.config(); S.acc = await H.store.account(); S.pinCfg = S.cfg.bossPin || null; S.role = 'admin'; let pinHash = '';
     if (role === 'boss') {
       if (!S.pinCfg) S.role = 'boss';
       else {

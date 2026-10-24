@@ -59,6 +59,11 @@
       try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/config.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json' } }); if (r.ok) { const c = await r.json(); if (c && typeof c === 'object') return c; } } catch (e) {}
       return {};
     },
+    async account() {
+      if (S.mode === 'demo') return {};
+      try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/stats.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json', 'Cache-Control': 'no-cache' }, cache: 'no-store' }); if (r.ok) { const c = await r.json(); if (c && typeof c === 'object') return c; } } catch (e) {}
+      return {};
+    },
     async templates() {
       if (S.mode === 'demo') { try { return JSON.parse(localStorage.getItem('baje-hub-tpl') || '{}'); } catch (e) { return {}; } }
       try { const r = await fetch(`https://api.github.com/repos/${S.repo}/contents/team/templates.json`, { headers: { Authorization: 'Bearer ' + S.token, Accept: 'application/vnd.github.raw+json', 'Cache-Control': 'no-cache' }, cache: 'no-store' }); if (r.ok) { const c = await r.json(); if (c && typeof c === 'object') return c; } } catch (e) {}
